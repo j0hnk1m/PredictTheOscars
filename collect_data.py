@@ -1,6 +1,8 @@
 import numpy as np
+import pandas as pd
 import requests
 import re
+
 
 def imdb_feature_film(year):
 	"""
@@ -10,16 +12,17 @@ def imdb_feature_film(year):
 	print(year)
 	response = requests.get("https://www.imdb.com/year/" + str(year))
 	html = response.text
-	# totalCount = int(re.findall(r'<span>1-50 of ([^%]+?) titles.</span>[\r\n]+', html)[0].replace(',', ''))
 
 	movies = np.zeros((0, 2))
-	for i in range(0, 5):  # 5 pages of 50 movies each = 250 top movies
-		movies = np.concatenate([movies, np.array(re.findall(r'<a href="/title/([^:?%]+?)/"[\r\n]+> <img alt="([^%]+?)"[\r\n]+', html))])
+	for i in range(0, 7):  # 7 pages of 50 movies each = 500 top movies
+		movies = np.concatenate([movies, np.flip(np.array(re.findall(r'<a href="/title/([^:?%]+?)/"[\r\n]+> <img alt="([^%]+?)"[\r\n]+', html)))])
 		nextLink = "https://www.imdb.com" + re.findall(r'<a href="(/search/title\?title_type=feature&year=(?:.*)&start=(?:.*))"[\r\n]+class="lister-page-next next-page"', html)[0]
 		response = requests.get(nextLink)
 		html = response.text
 
-	return movies
+	df = pd.DataFrame(movies, columns=['movie', 'imdb_id'])
+	df.insert(0, 'year', [year]*movies.shape[0], True)
+	return df
 
 
 def wikipedia_in_film(year):
@@ -32,16 +35,22 @@ def wikipedia_in_film(year):
 	html = response.text
 	movies = np.unique(re.findall(r'<td><i><a href="/wiki/(?:.*)" title="(.*)">', html))
 	movies = np.array([i.replace('&#39;', "'").replace('&amp;', '&').replace(' (film)', '') for i in movies])
-	return movies
+
+	df = pd.DataFrame(movies, columns=['movie'])
+	df.insert(0, 'year', [year] * movies.shape[0], True)
+	return df
 
 
-def wildaboutmovies(year):
-	"""
-	Given a specific year (from 2000~2018), returns a numpy array of movies.
-	Example link where this function scrapes data from: https://www.wildaboutmovies.com/2018_movies/
-	"""
-	print(year)
-	response = requests.get("https://www.wildaboutmovies.com/" + str(year) + "_movies/")
+def collect_movie_info(id):
+	response = requests.get("https://www.imdb.com/title/" + str(id))
 	html = response.text
-	movies = np.array(re.findall(r'<a href="/(?:.*)" alt="(.*)" /><p>', html))
-	return movies
+
+	certificate = re.findall(r'"contentRating": "PG-13"', html)
+	Duration
+	genre
+	IMDB rating
+	Synopsis
+	Votes
+	Gross
+	Metacritic
+	Release date
