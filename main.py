@@ -10,8 +10,10 @@ from keras.layers import Dense
 np.random.seed(1)
 
 
-def retrieve_movie_list():
-	if not os.path.exists('./data/imdb.csv'):
+def extract_movie_data():
+	if os.path.exists('./data/imdb.csv'):
+		imdb = pd.read_csv('./data/imdb.csv')
+	else:
 		imdb = collect_data.imdb_feature_film(2000)
 		for y in list(range(2001, 2019)):
 			imdb = imdb.append(collect_data.imdb_feature_film(y))
@@ -24,9 +26,20 @@ def retrieve_movie_list():
 				temp.append([row['year'], row['movie'], row['movie_id']])
 		imdb = pd.DataFrame(temp, columns=['year', 'movie', 'movie_id'])
 
+		tags = []
+		for index, row in imdb.iterrows():
+			print(str(index) + '. ' + row['movie'])
+			id = row['movie_id']
+			extra = collect_data.collect_movie_info(id)
+
+			if extra is not None:
+				tags.append([row['year'], row['movie'], row['movie_id']] + extra)
+
+		imdb = pd.DataFrame(tags, columns=['year', 'movie', 'movie_id', 'certificate', 'duration', 'genre', 'rate',
+										   'metascore', 'synopsis', 'votes',
+										   'gross', 'user_reviews', 'critic_reviews', 'popularity', 'awards_wins',
+										   'awards_nominations'])
 		imdb.to_csv('./data/imdb.csv')
-	else:
-		imdb = pd.read_csv('./data/imdb.csv')
 
 	return imdb
 
@@ -44,10 +57,10 @@ def build_model(type):
 def main():
 	df = pd.read_csv('./data/winners_nominees.csv')
 	df.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
-	imdb = retrieve_movie_list()
+	imdb = extract_movie_data()
+	del imdb['Unnamed: 0']
 
-	for index, row in imdb.iterrows():
-		movie_id = row['movie_id']
+
 
 
 if __name__ == '__main__':
