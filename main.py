@@ -19,7 +19,7 @@ def extract_movie_data():
 			imdb = imdb.append(collect_data.imdb_feature_film(y))
 
 		# Removes duplicate movies
-		df = pd.read_csv('./data/winners_nominees.csv')
+		df = pd.read_csv('./data/bigml.csv')
 		temp = []
 		for index, row in imdb.iterrows():
 			if row['movie'] not in list(df['movie']):
@@ -36,12 +36,17 @@ def extract_movie_data():
 				tags.append([row['year'], row['movie'], row['movie_id']] + extra)
 
 		imdb = pd.DataFrame(tags, columns=['year', 'movie', 'movie_id', 'certificate', 'duration', 'genre', 'rate',
-										   'metascore', 'synopsis', 'votes',
-										   'gross', 'user_reviews', 'critic_reviews', 'popularity', 'awards_wins',
-										   'awards_nominations'])
+										   'metascore', 'synopsis', 'votes', 'gross', 'user_reviews', 'critic_reviews',
+										   'popularity', 'awards_wins', 'awards_nominations'])
 		imdb.to_csv('./data/imdb.csv')
 
 	return imdb
+
+
+def edit_bigml():
+	bigml = pd.read_csv('./data/bigml.csv')
+	bigml = bigml.fillna(value={'gross': -1, 'popularity': -1})
+	bigml.to_csv('./data/bigml.csv')
 
 
 def build_model(type):
@@ -55,11 +60,10 @@ def build_model(type):
 
 
 def main():
-	df = pd.read_csv('./data/winners_nominees.csv')
-	df.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
+	bigml = pd.read_csv('./data/bigml.csv')
+	bigml.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
 	imdb = extract_movie_data()
 	del imdb['Unnamed: 0']
-
 
 
 
