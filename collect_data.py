@@ -22,9 +22,23 @@ def imdb_feature_film(year):
 	df.insert(0, 'year', [year]*movies.shape[0], True)
 	return df
 
-def collect_movie_info(id):
-	# ---------------TAGS---------------
+def movie_tags(id):
 	html = requests.get("https://www.imdb.com/title/" + str(id)).text
+	# ---------------TAGS---------------
+	# certificate
+	# duration
+	# genre
+	# rate
+	# metascore
+	# synopsis
+	# votes
+	# gross
+	# user reviews
+	# critic reviews
+	# popularity
+	# awards wins
+	# awards nominations
+
 	genre = re.findall('"genre": ([\s\S]+),\\n[\s\S]+"contentRating":', html)
 	certificate = re.findall('"contentRating": "(.*)",\\n[\s\S]+<strong', html)
 	rate = re.findall('<strong title="(.*) based on ', html)
@@ -70,10 +84,13 @@ def collect_movie_info(id):
 	else:
 		gross = int(gross[0].replace(',', ''))
 
-	tags = [certificate, duration, genre, rate, metascore, synopsis, votes, gross, user_reviews, critic_reviews, popularity, awards_wins, awards_nominations]
+	tags = [certificate, duration, genre, rate, metascore, synopsis, votes, gross, user_reviews, critic_reviews,
+			popularity, awards_wins, awards_nominations]
 	return tags
 
 
+def movie_awards(year):
+	html = requests.get("https://www.oscars.org/oscars/ceremonies/" + str(year)).text
 	# ---------------AWARDS---------------
 	# Oscar
 	# Golden Globe
@@ -90,10 +107,10 @@ def collect_movie_info(id):
 	# People Choice
 	# London Critics Circle Film
 	# American Cinema Editors
-	# Hollywood Film
-	# Austin Film Critics Association
-	# Denver Film Critics_Society
-	# Boston Society of Film Critics
-	# New York Film Critics Circle
-	# Los Angeles Film Critics Association
+	#
+	# *wins = 1
+	# *nominations = 0.5
+	# *nothing = 0
+	# *refer to ./data/awards_categories.csv for category indices
 
+	oscar = re.findall('', html)

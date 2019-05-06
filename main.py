@@ -12,7 +12,7 @@ np.random.seed(1)
 
 def extract_movie_data():
 	if os.path.exists('./data/imdb.csv'):
-		imdb = pd.read_csv('./data/imdb.csv')
+		imdb = pd.read_csv('./data/imdb.csv', index_col=0)
 	else:
 		imdb = collect_data.imdb_feature_film(2000)
 		for y in list(range(2001, 2019)):
@@ -30,21 +30,21 @@ def extract_movie_data():
 		for index, row in imdb.iterrows():
 			print(str(index) + '. ' + row['movie'])
 			id = row['movie_id']
-			extra = collect_data.collect_movie_info(id)
+			extra = collect_data.movie_tags(id)
 
 			if extra is not None:
 				tags.append([row['year'], row['movie'], row['movie_id']] + extra)
 
 		imdb = pd.DataFrame(tags, columns=['year', 'movie', 'movie_id', 'certificate', 'duration', 'genre', 'rate',
 										   'metascore', 'synopsis', 'votes', 'gross', 'user_reviews', 'critic_reviews',
-										   'popularity', 'awards_wins', 'awards_nominations'])
+										   'popularity', 'awards_wins', 'awards_nominations'], index=False)
 		imdb.to_csv('./data/imdb.csv')
 
 	return imdb
 
 
 def edit_bigml():
-	bigml = pd.read_csv('./data/bigml.csv')
+	bigml = pd.read_csv('./data/bigml.csv', index_col=0)
 	bigml = bigml.fillna(value={'gross': -1, 'popularity': -1})
 	bigml.to_csv('./data/bigml.csv')
 
@@ -60,11 +60,13 @@ def build_model(type):
 
 
 def main():
-	bigml = pd.read_csv('./data/bigml.csv')
-	bigml.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
-	imdb = extract_movie_data()
-	del imdb['Unnamed: 0']
-
+	# bigml = pd.read_csv('./data/bigml.csv', index_col=0)
+	# imdb = extract_movie_data()
+	# df = bigml.append(imdb, sort=False, ignore_index=True)
+	# df.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
+	# df = df.reset_index(drop=True)
+	# df.to_csv('./data/combined.csv')
+	df = pd.read_csv('./data/combined.csv', index_col=0)
 
 
 if __name__ == '__main__':
