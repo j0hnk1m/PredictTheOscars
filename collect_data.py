@@ -89,7 +89,7 @@ def movie_tags(id):
 	return tags
 
 
-def movie_awards(id):
+def movie_awards(year):
 	events = ['ev0000292', 'ev0000123', 'ev0000598', 'ev0000212', 'ev0000531', 'ev0000618', 'ev0000710',
 			  'ev0000190', 'ev0002704', 'ev0000511', 'ev0000530', 'ev0000403', 'ev0000017', 'ev0000003']
 
