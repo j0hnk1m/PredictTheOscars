@@ -90,7 +90,12 @@ def movie_tags(id):
 
 
 def movie_awards(id):
-	html = requests.get("https://www.imdb.com/title/" + str(id) + "/awards?ref_=tt_awd").text
+	events = ['ev0000292', 'ev0000123', 'ev0000598', 'ev0000212', 'ev0000531', 'ev0000618', 'ev0000710',
+			  'ev0000190', 'ev0002704', 'ev0000511', 'ev0000530', 'ev0000403', 'ev0000017', 'ev0000003']
+
+	htmls = []
+	for e in events:
+		htmls.append(requests.get("https://www.imdb.com/event/" + e + "/" + str(year) + "/1?ref_=ttawd_ev_1").text)
 	# ---------------AWARDS---------------
 	# Golden Globe
 	# BAFTA
@@ -107,20 +112,20 @@ def movie_awards(id):
 	# American Cinema Editors
 	# Oscar
 
-	gg = re.findall('Golden Globe, USA(.*)', html)
-	bafta = re.findall('', html)
-	sag = re.findall('', html)
-	dg = re.findall('', html)
-	pg = re.findall('', html)
-	adg = re.findall('', html)
-	wg = re.findall('', html)
-	cdg = re.findall('', html)
-	ofta = re.findall('', html)
-	ofcs = re.findall('', html)
-	pc = re.findall('', html)
-	lccf = re.findall('', html)
-	ace = re.findall('', html)
-	oscar = re.findall('', html)
+	gg = re.findall('"name":"([^"]*)","note":null', htmls[0])
+	bafta = re.findall('', htmls[1])
+	sag = re.findall('', htmls[2])
+	dg = re.findall('', htmls[3])
+	pg = re.findall('', htmls[4])
+	adg = re.findall('', htmls[5])
+	wg = re.findall('', htmls[6])
+	cdg = re.findall('', htmls[7])
+	ofta = re.findall('', htmls[8])
+	ofcs = re.findall('', htmls[9])
+	pc = re.findall('', htmls[10])
+	lccf = re.findall('', htmls[11])
+	ace = re.findall('', htmls[12])
+	oscar = re.findall('', htmls[13])
 
 
 	return [oscar, gg, bafta, sag, cc, dg, pg, adg, wg, cdg, ofta, ofcs, pc, lccf, ace]
