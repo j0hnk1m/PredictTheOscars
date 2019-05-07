@@ -95,7 +95,7 @@ def movie_awards(year):
 
 	htmls = []
 	for e in events:
-		htmls.append(requests.get("https://www.imdb.com/event/" + e + "/" + str(year) + "/1?ref_=ttawd_ev_1").text)
+		htmls.append(requests.get("https://www.imdb.com/event/" + e + "/" + str(year + 1) + "/1?ref_=ttawd_ev_1").text)
 	# ---------------AWARDS---------------
 	# Golden Globe
 	# BAFTA
@@ -112,7 +112,19 @@ def movie_awards(year):
 	# American Cinema Editors
 	# Oscar
 
-	gg = re.findall('"name":"([^"]*)","note":null', htmls[0])
+	gg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[0]) if 'Television' not in i]
+	gg_primary = re.findall('"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[0])
+	gg_secondary = re.findall('"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[0])
+	gg = []
+	for c in gg_categories:
+		if 'Actor' in c or 'Actress' in c or 'Director' in c:
+			gg.append(gg_secondary[:5])
+			del gg_primary[:5]
+			del gg_secondary[:5]
+		else:
+			gg.append(gg_primary[:5])
+			del gg_primary[:5]
+
 	bafta = re.findall('', htmls[1])
 	sag = re.findall('', htmls[2])
 	dg = re.findall('', htmls[3])
