@@ -125,7 +125,19 @@ def movie_awards(year):
 			gg.append(gg_primary[:5])
 			del gg_primary[:5]
 
-	bafta = re.findall('', htmls[1])
+	bafta_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[1]) if 'Television' not in i]
+	bafta_primary = re.findall('"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[1])
+	bafta_secondary = re.findall('"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[1])
+	bafta = []
+	for c in bafta_categories:
+		if 'Actor' in c or 'Actress' in c or 'Director' in c:
+			bafta.append(bafta_secondary[:5])
+			del bafta_primary[:5]
+			del bafta_secondary[:5]
+		else:
+			bafta.append(bafta_primary[:5])
+			del bafta_primary[:5]
+
 	sag = re.findall('', htmls[2])
 	dg = re.findall('', htmls[3])
 	pg = re.findall('', htmls[4])
