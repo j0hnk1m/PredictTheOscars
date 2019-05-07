@@ -91,65 +91,131 @@ def movie_tags(id):
 
 def movie_awards(year):
 	events = ['ev0000292', 'ev0000123', 'ev0000598', 'ev0000212', 'ev0000531', 'ev0000618', 'ev0000710',
-			  'ev0000190', 'ev0002704', 'ev0000511', 'ev0000530', 'ev0000403', 'ev0000017', 'ev0000003']
+			  'ev0000190', 'ev0002704', 'ev0000511', 'ev0000133', 'ev0000403', 'ev0000017', 'ev0000003']
 
 	htmls = []
 	for e in events:
 		htmls.append(requests.get("https://www.imdb.com/event/" + e + "/" + str(year + 1) + "/1?ref_=ttawd_ev_1").text)
 	# ---------------AWARDS---------------
-	# Golden Globe
-	# BAFTA
-	# Screen Actors Guild
-	# Directors Guild
-	# Producers Guild
-	# Art Directors Guild
-	# Writers Guild
-	# Costume Designers Guild
-	# Online Film Television Association
-	# Online Film Critics Society
-	# People Choice
-	# London Critics Circle Film
-	# American Cinema Editors
-	# Oscar
+	# 1. Golden Globe
+	# 2. BAFTA
+	# 3. Screen Actors Guild
+	# 4. Directors Guild
+	# 5. Producers Guild
+	# 6. Art Directors Guild
+	# 7. Writers Guild
+	# 8. Costume Designers Guild
+	# 9. Online Film Television Association
+	# 10. Online Film Critics Society
+	# 11. Critics Choice
+	# 12. London Critics Circle Film
+	# 13. American Cinema Editors
+	# 14. Oscar
 
 	gg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[0]) if 'Television' not in i]
-	gg_primary = re.findall('"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[0])
-	gg_secondary = re.findall('"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[0])
 	gg = []
 	for c in gg_categories:
 		if 'Actor' in c or 'Actress' in c or 'Director' in c:
-			gg.append(gg_secondary[:5])
-			del gg_primary[:5]
-			del gg_secondary[:5]
+			gg.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[0])[:-1])
 		else:
-			gg.append(gg_primary[:5])
-			del gg_primary[:5]
+			gg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[0])[:-1])
 
-	bafta_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[1]) if 'Television' not in i]
-	bafta_primary = re.findall('"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[1])
-	bafta_secondary = re.findall('"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[1])
+	bafta_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[1]) if 'British' not in i][:20]
 	bafta = []
 	for c in bafta_categories:
 		if 'Actor' in c or 'Actress' in c or 'Director' in c:
-			bafta.append(bafta_secondary[:5])
-			del bafta_primary[:5]
-			del bafta_secondary[:5]
+			bafta.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[1])[:5])
 		else:
-			bafta.append(bafta_primary[:5])
-			del bafta_primary[:5]
+			bafta.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[1])[:-1])
 
-	sag = re.findall('', htmls[2])
-	dg = re.findall('', htmls[3])
-	pg = re.findall('', htmls[4])
-	adg = re.findall('', htmls[5])
-	wg = re.findall('', htmls[6])
-	cdg = re.findall('', htmls[7])
-	ofta = re.findall('', htmls[8])
-	ofcs = re.findall('', htmls[9])
-	pc = re.findall('', htmls[10])
-	lccf = re.findall('', htmls[11])
-	ace = re.findall('', htmls[12])
-	oscar = re.findall('', htmls[13])
+	sag_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[2]) if 'Series' not in i and 'Motion Picture' not in i]
+	sag = []
+	for c in sag_categories:
+		if 'Actor' in c or 'Actress' in c or 'Director' in c:
+			sag.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[2])[:-1])
+		else:
+			sag.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[2])[:-1])
 
+	dg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[3]) if 'Feature Film' in i or 'Documentary' in i]
+	dg = []
+	for c in dg_categories:
+		dg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[3])[:-1])
 
-	return [oscar, gg, bafta, sag, cc, dg, pg, adg, wg, cdg, ofta, ofcs, pc, lccf, ace]
+	pg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[4]) if 'Theatrical Motion Pictures' in i]
+	pg = []
+	for c in pg_categories:
+		pg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[4])[:-1])
+
+	adg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[5]) if 'Film' in i]
+	adg = []
+	for c in adg_categories:
+		adg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[5])[:-1])
+
+	wg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[6]) if 'Original Screenplay'
+					 in i or 'Adapted Screenplay' in i]
+	wg = []
+	for c in wg_categories:
+		wg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[6])[:-1])
+
+	cdg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[7]) if 'Film' in i]
+	cdg = []
+	for c in cdg_categories:
+		cdg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[7])[:-1])
+
+	ofta_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[8]) if 'Ensemble' not in i
+					   and 'Debut' not in i and 'Poster' not in i and 'Trailer' not in i and 'Stunt' not in i and
+					   'Sequence' not in i and 'Voice-Over' not in i and 'Youth' not in i and 'Cinematic' not in i]
+	ofta = []
+	for c in ofta_categories:
+		if 'Actor' in c or 'Actress' in c or 'Director' in c:
+			ofta.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[8])[:-1])
+		else:
+			ofta.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[8])[:-1])
+
+	ofcs_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[9]) if 'Debut' not in i and 'Stunt' not in i]
+	ofcs = []
+	for c in ofcs_categories:
+		if 'Actor' in c or 'Actress' in c or 'Director' in c:
+			ofcs.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[9])[:-1])
+		else:
+			ofcs.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[9])[:-1])
+
+	cc_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[10]) if 'Series' not in i and 'Young' not in i and 'Ensemble' not in i and 'TV' not in i]
+	cc = []
+	for c in cc_categories:
+		if 'Actor' in c or 'Actress' in c or 'Director' in c:
+			cc.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[10])[:-1])
+		else:
+			cc.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[10])[:-1])
+
+	lccf_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[11]) if 'British' not in i and 'Technical' not in i]
+	lccf = []
+	for c in lccf_categories:
+		if 'Actor' in c or 'Actress' in c or 'Director' in c:
+			lccf.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[11])[:-1])
+		else:
+			lccf.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[11])[:-1])
+
+	ace_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[12]) if 'Series' not in i and 'Non-Theatrical' not in i]
+	ace = []
+	for c in ace_categories:
+		if 'Actor' in c or 'Actress' in c or 'Director' in c:
+			ace.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[12])[:-1])
+		else:
+			ace.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[12])[:-1])
+
+	oscar_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[13])]
+	oscar = []
+	for c in oscar_categories:
+		if c == oscar_categories[-1]:
+			if 'Actor' in c or 'Actress' in c or 'Director' in c:
+				oscar.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[13]))
+			else:
+				oscar.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[13]))
+		else:
+			if 'Actor' in c or 'Actress' in c or 'Director' in c:
+				oscar.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[13])[:-1])
+			else:
+				oscar.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[13])[:-1])
+
+	return [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace, oscar]
