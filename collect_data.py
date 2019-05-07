@@ -46,7 +46,7 @@ def movie_tags(id):
 	user_reviews = re.findall('<span itemprop="reviewCount">([,0-9]+) user</span>', html)
 	critic_reviews = re.findall('<span itemprop="reviewCount">([,0-9]+) critic</span>', html)
 	duration = re.findall('<time datetime="PT(\d+)M">\\n', html)
-	synopsis = re.findall('<div class="summary_text">\\n(.*)\\n', html)[0].strip()
+	keywords = re.findall('<div class="summary_text">\\n(.*)\\n', html)[0].strip()
 	metascore = re.findall('<div class="metacriticScore score_[\w]+ titleReviewBarSubItem">\\n<span>([0-9]+)<', html)
 
 	if len(genre) == 0 or len(certificate) == 0 or len(rate) == 0 or len(votes) == 0 or len(user_reviews) == 0 or len(critic_reviews) == 0 or len(duration) == 0 or len(metascore) == 0:
@@ -84,19 +84,17 @@ def movie_tags(id):
 	else:
 		gross = int(gross[0].replace(',', ''))
 
-	tags = [certificate, duration, genre, rate, metascore, synopsis, votes, gross, user_reviews, critic_reviews,
+	tags = [certificate, duration, genre, rate, metascore, keywords, votes, gross, user_reviews, critic_reviews,
 			popularity, awards_wins, awards_nominations]
 	return tags
 
 
-def movie_awards(year):
-	html = requests.get("https://www.oscars.org/oscars/ceremonies/" + str(year)).text
+def movie_awards(id):
+	html = requests.get("https://www.imdb.com/title/" + str(id) + "/awards?ref_=tt_awd").text
 	# ---------------AWARDS---------------
-	# Oscar
 	# Golden Globe
 	# BAFTA
 	# Screen Actors Guild
-	# Critics Choice
 	# Directors Guild
 	# Producers Guild
 	# Art Directors Guild
@@ -107,10 +105,22 @@ def movie_awards(year):
 	# People Choice
 	# London Critics Circle Film
 	# American Cinema Editors
-	#
-	# *wins = 1
-	# *nominations = 0.5
-	# *nothing = 0
-	# *refer to ./data/awards_categories.csv for category indices
+	# Oscar
 
+	gg = re.findall('Golden Globe, USA(.*)', html)
+	bafta = re.findall('', html)
+	sag = re.findall('', html)
+	dg = re.findall('', html)
+	pg = re.findall('', html)
+	adg = re.findall('', html)
+	wg = re.findall('', html)
+	cdg = re.findall('', html)
+	ofta = re.findall('', html)
+	ofcs = re.findall('', html)
+	pc = re.findall('', html)
+	lccf = re.findall('', html)
+	ace = re.findall('', html)
 	oscar = re.findall('', html)
+
+
+	return [oscar, gg, bafta, sag, cc, dg, pg, adg, wg, cdg, ofta, ofcs, pc, lccf, ace]

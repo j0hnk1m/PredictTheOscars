@@ -68,6 +68,9 @@ def main():
 	# df.to_csv('./data/combined.csv')
 	df = pd.read_csv('./data/combined.csv', index_col=0)
 
+	for y in range(2000, 2019):
+		awards = collect_data.movie_awards(y)
+
 
 if __name__ == '__main__':
 	main()
