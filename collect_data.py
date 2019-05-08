@@ -218,4 +218,21 @@ def movie_awards(year):
 			else:
 				oscar.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[13])[:-1])
 
-	return [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace, oscar]
+	return [gg_categories, bafta_categories, sag_categories, dg_categories, pg_categories, adg_categories, wg_categories, cdg_categories, ofta_categories, ofcs_categories, cc_categories, lccf_categories, ace_categories, oscar_categories], [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace, oscar]
+
+
+def order_categories(name, categories):
+	if name == 'Golden Globe':
+		new = ['Best Motion Picture - Drama',
+			   'Best Motion Picture - Musical or Comedy',
+			   'Best Performance by an Actor in a Motion Picture - Drama',
+			   'Best Performance by an Actor in a Motion Picture - Musical or Comedy',
+			   'Best Performance by an Actress in a Motion Picture - Drama',
+				'Best Performance by an Actress in a Motion Picture - Musical or Comedy',
+			   'Best Performance by an Actor in a Supporting Role in a Motion Picture',
+			   'Best Performance by an Actress in a Supporting Role in a Motion Picture',
+			   'Best Motion Picture - Animated', 'Best Director - Motion Picture',
+			   'Best Motion Picture - Foreign Language',
+			   'Best Original Score - Motion Picture',
+			   'Best Original Song - Motion Picture',
+			   'Best Screenplay - Motion Picture']

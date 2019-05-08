@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import collect_data
 import os
+import pickle
 from sklearn.model_selection import train_test_split
 from sklearn import svm
 
@@ -68,9 +69,15 @@ def main():
 	# df.to_csv('./data/combined.csv')
 	df = pd.read_csv('./data/combined.csv', index_col=0)
 
+	categories = []
+	awards = []
 	for y in range(2000, 2019):
-		awards = collect_data.movie_awards(y)
+		results = collect_data.movie_awards(y)
+		categories.append(results[0])
+		awards.append(results[1])
 
+	for c in categories:
+		print(c[0])
 
 if __name__ == '__main__':
 	main()
