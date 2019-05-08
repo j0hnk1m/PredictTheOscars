@@ -221,18 +221,23 @@ def movie_awards(year):
 	return [gg_categories, bafta_categories, sag_categories, dg_categories, pg_categories, adg_categories, wg_categories, cdg_categories, ofta_categories, ofcs_categories, cc_categories, lccf_categories, ace_categories, oscar_categories], [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace, oscar]
 
 
-def order_categories(name, categories):
+def order_categories(name, cs):
 	if name == 'Golden Globe':
-		new = ['Best Motion Picture - Drama',
-			   'Best Motion Picture - Musical or Comedy',
-			   'Best Performance by an Actor in a Motion Picture - Drama',
-			   'Best Performance by an Actor in a Motion Picture - Musical or Comedy',
-			   'Best Performance by an Actress in a Motion Picture - Drama',
-				'Best Performance by an Actress in a Motion Picture - Musical or Comedy',
-			   'Best Performance by an Actor in a Supporting Role in a Motion Picture',
-			   'Best Performance by an Actress in a Supporting Role in a Motion Picture',
-			   'Best Motion Picture - Animated', 'Best Director - Motion Picture',
-			   'Best Motion Picture - Foreign Language',
-			   'Best Original Score - Motion Picture',
-			   'Best Original Song - Motion Picture',
-			   'Best Screenplay - Motion Picture']
+		order = [next((s for s in cs if 'Best Motion Picture' in s and 'Drama' in s), None),
+					next((s for s in cs if 'Best Motion Picture' in s and 'Comedy' in s), None),
+					next((s for s in cs if 'Actor' in s and 'Drama' in s), None),
+					next((s for s in cs if 'Actor' in s and 'Comedy' in s), None),
+					next((s for s in cs if 'Actress' in s and 'Drama' in s), None),
+					next((s for s in cs if 'Actress' in s and 'Comedy' in s), None),
+					next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
+					next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
+					next((s for s in cs if 'Animated' in s and 'Comedy' in s), None),
+				   next((s for s in cs if 'Director' in s), None),
+					next((s for s in cs if 'Foreign' in s), None),
+					next((s for s in cs if 'Original Score' in s), None),
+					next((s for s in cs if 'Original Song' in s), None),
+					next((s for s in cs if 'Screenplay' in s), None)]
+		order = [i for i in order if i is not None]
+		return order
+
+
