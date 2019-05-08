@@ -221,7 +221,7 @@ def movie_awards(year):
 	return [gg_categories, bafta_categories, sag_categories, dg_categories, pg_categories, adg_categories, wg_categories, cdg_categories, ofta_categories, ofcs_categories, cc_categories, lccf_categories, ace_categories, oscar_categories], [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace, oscar]
 
 
-def order_categories(name, categories):
+def order_categories(name, cats):
 	if name == 'Golden Globe':
 		new = ['Best Motion Picture - Drama',
 			   'Best Motion Picture - Musical or Comedy',
@@ -236,3 +236,8 @@ def order_categories(name, categories):
 			   'Best Original Score - Motion Picture',
 			   'Best Original Song - Motion Picture',
 			   'Best Screenplay - Motion Picture']
+
+		for c in cats:
+			c.replace(new[0], '1').replace(new[1], '2').replace(new[2], '3').replace([new[3]], '4').replace(new[4], '5')\
+				.replace(new[5], '6').replace(new[6], '7').replace([new[7]], '8').replace(new[8], '9').replace(new[9], '10')\
+				.replace(new[10], '11').replace([new[11]], '12').replace(new[12], '13').replace(new[13], '14')

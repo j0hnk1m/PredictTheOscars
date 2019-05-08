@@ -76,6 +76,11 @@ def main():
 		categories.append(results[0])
 		awards.append(results[1])
 
+	with open('categories', 'rb') as f:
+		categories = pickle.load(f)
+	with open('awards', 'rb') as f:
+		awards = pickle.load(f)
+
 	for c in categories:
 		print(c[0])
 
