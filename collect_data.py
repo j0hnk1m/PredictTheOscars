@@ -239,5 +239,3 @@ def order_categories(name, cs):
 					next((s for s in cs if 'Screenplay' in s), None)]
 		order = [i for i in order if i is not None]
 		return order
-
-
