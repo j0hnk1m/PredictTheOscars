@@ -119,7 +119,7 @@ def movie_awards(year):
 			gg.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[0])[:-1])
 		else:
 			gg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[0])[:-1])
-	gg_categories = order_categories('gg', gg_categories)
+	gg_categories = order_categories('gg', gg, gg_categories)
 
 	bafta_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[1]) if 'British' not in i and 'Best' in i and 'Series' not in i and 'Television'][:20]
 	bafta = []
@@ -242,22 +242,29 @@ def movie_awards(year):
 	return [gg_categories, bafta_categories, sag_categories, dg_categories, pg_categories, adg_categories, wg_categories, cdg_categories, ofta_categories, ofcs_categories, cc_categories, lccf_categories, ace_categories, oscar_categories], [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace, oscar]
 
 
-def order_categories(name, cs):
+def order_categories(name, aw, cs):
 	if name == 'gg':
-		cs = [c.replace(next((s for s in cs if 'Best Motion Picture' in s and 'Drama' in s), None), '0')\
-				.replace(next((s for s in cs if 'Best Motion Picture' in s and 'Comedy' in s), None), '0')\
-				.replace(next((s for s in cs if 'Actor' in s and 'Drama' in s and 'Supporting' not in s), None), '1')\
-				.replace(next((s for s in cs if 'Actor' in s and 'Comedy' in s and 'Supporting' not in s), None), '1')\
-				.replace(next((s for s in cs if 'Actress' in s and 'Drama' in s and 'Supporting' not in s), None), '2')\
-				.replace(next((s for s in cs if 'Actress' in s and 'Comedy' in s and 'Supporting' not in s), None), '2')\
-				.replace(next((s for s in cs if 'Actor' in s and 'Supporting' in s), None), '3')\
-				.replace(next((s for s in cs if 'Actress' in s and 'Supporting' in s), None), '4')\
-				.replace(next((s for s in cs if 'Animated' in s and 'Comedy' in s), None), '5')\
-				.replace(next((s for s in cs if 'Director' in s), None), '8')\
-				.replace(next((s for s in cs if 'Foreign' in s), None), '12')\
-				.replace(next((s for s in cs if 'Original Score' in s), None), '14')\
-				.replace(next((s for s in cs if 'Original Song' in s), None), '15')\
-				.replace(next((s for s in cs if 'Screenplay' in s), None), '22') for c in cs]
+		replace = [next((s for s in cs if 'Best Motion Picture' in s and 'Drama' in s), None),
+				   next((s for s in cs if 'Best Motion Picture' in s and 'Comedy' in s), None),
+				   next((s for s in cs if 'Actor' in s and 'Drama' in s and 'Supporting' not in s), None),
+				   next((s for s in cs if 'Actor' in s and 'Comedy' in s and 'Supporting' not in s), None),
+				   next((s for s in cs if 'Actress' in s and 'Drama' in s and 'Supporting' not in s), None),
+				   next((s for s in cs if 'Actress' in s and 'Comedy' in s and 'Supporting' not in s), None),
+				   next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
+				   next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
+				   next((s for s in cs if 'Animated' in s), None),
+				   next((s for s in cs if 'Director' in s), None),
+				   next((s for s in cs if 'Foreign' in s), None),
+				   next((s for s in cs if 'Original Score' in s), None),
+				   next((s for s in cs if 'Original Song' in s), None),
+				   next((s for s in cs if 'Screenplay' in s), None)]
+		id = [0, 0, 1, 1, 2, 2, 3, 4, 5, 8, 12, 14, 15, 22]
+		none_index = [i for i in replace if i is None]
+		cs = [c for c in cs if c not in none_index]
+		aw = [a for a in aw if a not in none_index]
+
+		for i, c in enumerate(cs):
+			cs[i] = str(id[i])
 	elif name == 'bafta':
 		cs = [c.replace(next((s for s in cs if 'Best Film' in s), None), '0') \
 			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None), '1') \
