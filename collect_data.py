@@ -163,8 +163,9 @@ def movie_awards(year):
 		cdg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[7])[:-1])
 
 	ofta_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[8]) if 'Series' not in i and 'Ensemble' not in i
-					   and 'Debut' not in i and 'Poster' not in i and 'Trailer' not in i and 'Stunt' not in i and
-					   'Sequence' not in i and 'Voice-Over' not in i and 'Youth' not in i and 'Cinematic' not in i]
+					   and 'Television' not in i and 'Actors and Actresses' not in i and 'Creative' not in i and 'Program' not in i
+					   and 'Behind' not in i and 'Debut' not in i and 'Poster' not in i and 'Trailer' not in i and 'Stunt' not in i and
+					   'Sequence' not in i and 'Voice-Over' not in i and 'Youth' not in i and 'Cinematic' not in i and 'Casting' not in i and 'Acting' not in i]
 	ofta = []
 	for c in ofta_categories:
 		if 'Actor' in c or 'Actress' in c or 'Director' in c:
