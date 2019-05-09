@@ -72,17 +72,35 @@ def main():
 	categories = []
 	awards = []
 	for y in range(2000, 2019):
+		print(y)
 		results = collect_data.movie_awards(y)
 		categories.append(results[0])
 		awards.append(results[1])
+
+	with open('categories', 'wb') as f:
+		pickle.dump(categories, f)
+	with open('awards', 'wb') as f:
+		pickle.dump(awards, f)
 
 	with open('categories', 'rb') as f:
 		categories = pickle.load(f)
 	with open('awards', 'rb') as f:
 		awards = pickle.load(f)
 
-	for c in categories:
-		print(c[0])
+	ggs = [i[0] for i in categories]
+	baftas = [i[1] for i in categories]
+	sags = [i[2] for i in categories]
+	dgs = [i[3] for i in categories]
+	pgs = [i[4] for i in categories]
+	adgs = [i[5] for i in categories]
+	wgs = [i[6] for i in categories]
+	cdgs = [i[7] for i in categories]
+	oftas = [i[8] for i in categories]
+	ofcss = [i[9] for i in categories]
+	ccs = [i[10] for i in categories]
+	lccfs = [i[11] for i in categories]
+	aces = [i[12] for i in categories]
+	oscars = [i[13] for i in categories]
 
 if __name__ == '__main__':
 	main()
