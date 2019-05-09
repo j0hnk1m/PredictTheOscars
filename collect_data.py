@@ -119,6 +119,7 @@ def movie_awards(year):
 			gg.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[0])[:-1])
 		else:
 			gg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[0])[:-1])
+	gg_categories = order_categories('gg', gg_categories)
 
 	bafta_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[1]) if 'British' not in i and 'Best' in i and 'Series' not in i and 'Television'][:20]
 	bafta = []
@@ -127,6 +128,7 @@ def movie_awards(year):
 			bafta.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[1])[:5])
 		else:
 			bafta.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[1])[:-1])
+	bafta_categories = order_categories('bafta', bafta_categories)
 
 	sag_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[2]) if 'Series' not in i and 'Motion Picture' not in i and 'Stunt' not in i and 'Cast' not in i]
 	sag = []
@@ -135,32 +137,40 @@ def movie_awards(year):
 			sag.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[2])[:-1])
 		else:
 			sag.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[2])[:-1])
+	sag_categories = order_categories('sag', sag_categories)
 
 	dg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[3]) if 'Feature Film' in i or 'Documentary' in i and 'First' not in i]
 	dg = []
 	for c in dg_categories:
 		dg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[3])[:-1])
+	dg_categories = order_categories('dg', dg_categories)
 
 	pg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[4]) if 'Producer of' in i and 'Theatrical Motion Pictures' in i]
 	pg = []
 	for c in pg_categories:
 		pg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[4])[:-1])
+	pg_categories = order_categories('pg', pg_categories)
 
 	adg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[5]) if 'Film' in i]
 	adg = []
 	for c in adg_categories:
 		adg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[5])[:-1])
+	adg_categories = order_categories('adg', adg_categories)
+
 
 	wg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[6]) if 'Original Screenplay'
 					 in i or 'Adapted Screenplay' in i]
 	wg = []
 	for c in wg_categories:
 		wg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[6])[:-1])
+	wg_categories = order_categories('wg', wg_categories)
 
-	cdg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[7]) if 'Contemporary Film' in i or 'Period Film' in i or 'Fantasy Film' in i]
+	cdg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[7]) if 'Contemporary Film' in i
+					  or 'Period Film' in i or 'Fantasy Film' in i]
 	cdg = []
 	for c in cdg_categories:
 		cdg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[7])[:-1])
+	cdg_categories = order_categories('cdg', cdg_categories)
 
 	ofta_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[8]) if 'Series' not in i and 'Ensemble' not in i
 					   and 'Television' not in i and 'Actors and Actresses' not in i and 'Creative' not in i and 'Program' not in i
@@ -172,38 +182,47 @@ def movie_awards(year):
 			ofta.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[8])[:-1])
 		else:
 			ofta.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[8])[:-1])
+	ofta_categories = order_categories('ofta', ofta_categories)
 
-	ofcs_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[9]) if 'Debut' not in i and 'Stunt' not in i]
+	ofcs_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[9]) if 'Debut' not in i
+					   and 'Stunt' not in i and 'Television' not in i and 'Series' not in i]
 	ofcs = []
 	for c in ofcs_categories:
 		if 'Actor' in c or 'Actress' in c or 'Director' in c:
 			ofcs.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[9])[:-1])
 		else:
 			ofcs.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[9])[:-1])
+	ofcs_categories = order_categories('ofcs', ofcs_categories)
 
-	cc_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[10]) if 'Series' not in i and 'Young' not in i and 'Ensemble' not in i and 'TV' not in i]
+	cc_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[10]) if 'Series' not in i
+					 and 'Young' not in i and 'Ensemble' not in i and 'TV' not in i and 'Television' not in i and 'Show' not in i]
 	cc = []
 	for c in cc_categories:
 		if 'Actor' in c or 'Actress' in c or 'Director' in c:
 			cc.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[10])[:-1])
 		else:
 			cc.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[10])[:-1])
+	cc_categories = order_categories('cc', cc_categories)
 
-	lccf_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[11]) if 'British' not in i and 'Technical' not in i]
+	lccf_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[11]) if 'British' not in i
+					   and 'Technical' not in i and 'Screenwriter' not in i and 'Television' not in i]
 	lccf = []
 	for c in lccf_categories:
 		if 'Actor' in c or 'Actress' in c or 'Director' in c:
 			lccf.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[11])[:-1])
 		else:
 			lccf.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[11])[:-1])
+	lccf_categories = order_categories('lccf', lccf_categories)
 
-	ace_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[12]) if 'Series' not in i and 'Non-Theatrical' not in i]
+	ace_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[12]) if 'Series' not in i
+					  and 'Non-Theatrical' not in i and 'Television' not in i and 'Student' not in i]
 	ace = []
 	for c in ace_categories:
 		if 'Actor' in c or 'Actress' in c or 'Director' in c:
 			ace.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[12])[:-1])
 		else:
 			ace.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[12])[:-1])
+	ace_categories = order_categories('ace', ace_categories)
 
 	oscar_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[13])]
 	oscar = []
@@ -218,136 +237,175 @@ def movie_awards(year):
 				oscar.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*)","note":null', htmls[13])[:-1])
 			else:
 				oscar.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*)","note":null', htmls[13])[:-1])
+	oscar_categories = order_categories('oscar', oscar_categories)
 
 	return [gg_categories, bafta_categories, sag_categories, dg_categories, pg_categories, adg_categories, wg_categories, cdg_categories, ofta_categories, ofcs_categories, cc_categories, lccf_categories, ace_categories, oscar_categories], [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace, oscar]
 
 
 def order_categories(name, cs):
-	if name == 'Golden Globe':
-		order = [next((s for s in cs if 'Best Motion Picture' in s and 'Drama' in s), None),
-					next((s for s in cs if 'Best Motion Picture' in s and 'Comedy' in s), None),
-					next((s for s in cs if 'Actor' in s and 'Drama' in s and 'Supporting' not in s), None),
-					next((s for s in cs if 'Actor' in s and 'Comedy' in s and 'Supporting' not in s), None),
-					next((s for s in cs if 'Actress' in s and 'Drama' in s and 'Supporting' not in s), None),
-					next((s for s in cs if 'Actress' in s and 'Comedy' in s and 'Supporting' not in s), None),
-					next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
-					next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-					next((s for s in cs if 'Animated' in s and 'Comedy' in s), None),
-				   next((s for s in cs if 'Director' in s), None),
-					next((s for s in cs if 'Foreign' in s), None),
-					next((s for s in cs if 'Original Score' in s), None),
-					next((s for s in cs if 'Original Song' in s), None),
-					next((s for s in cs if 'Screenplay' in s), None)]
-	elif name == 'BAFTA':
-		order = [next((s for s in cs if 'Best Film' in s), None),
-				 next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Actress' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
-				 next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-				 next((s for s in cs if 'Animated' in s and 'Short' not in s), None),
-				 next((s for s in cs if 'Cinematography' in s), None),
-				 next((s for s in cs if 'Costume Design' in s), None),
-				 next((s for s in cs if 'Documentary' in s), None),
-				 next((s for s in cs if 'Editing' in s), None),
-				 next((s for s in cs if 'not' in s and 'English' in s), None),
-				 next((s for s in cs if 'Make Up' in s or 'Hair' in s), None),
-				 next((s for s in cs if 'Production Design' in s), None),
-				 next((s for s in cs if 'Short' in s and 'Animated' in s), None),
-				 next((s for s in cs if 'Short' in s and 'Film'), None),
-				 next((s for s in cs if 'Sound' in s), None),
-				 next((s for s in cs if 'Visual Effects' in s), None),
-				 next((s for s in cs if 'Screenplay' in s and 'Adapted' in s), None),
-				 next((s for s in cs if 'Screenplay' in s and 'Original' in s), None)]
-	elif name == 'Screen Actors Guild':
-		order = [next((s for s in cs if 'Male' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Female' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Male' in s and 'Supporting' in s), None),
-				 next((s for s in cs if 'Female' in s and 'Supporting' in s), None)]
-	elif name == 'Directors Guild':
-		order = [next((s for s in cs if 'Feature' in s), None),
-				 next((s for s in cs if 'Documentary' in s), None)]
-	elif name == 'Producers Guild':
-		order = [next((s for s in cs if 'Producer of Theatrical' in s), None),
-				 next((s for s in cs if 'Animated' in s), None),
-				 next((s for s in cs if 'Documentary' in s), None)]
-	elif name == 'Art Directors Guild':
-		order = [next((s for s in cs if 'Period' in s), None),
-				 next((s for s in cs if 'Fantasy' in s), None),
-				 next((s for s in cs if 'Contemporary' in s), None),
-				 next((s for s in cs if 'Animated' in s), None)]
-	elif name == 'Writers Guild':
-		order = [next((s for s in cs if 'Adapted' in s), None),
-				 next((s for s in cs if 'Original' in s), None)]
-	elif name == 'Costume Designers Guild':
-		order = [next((s for s in cs if 'Period' in s), None),
-				 next((s for s in cs if 'Fantasy' in s), None),
-				 next((s for s in cs if 'Contemporary' in s), None)]
-	elif name == 'Online Film Television Association':
-		order = [next((s for s in cs if 'Best Picture' in s), None),
-				 next((s for s in cs if 'Best Actor' in s), None),
-				 next((s for s in cs if 'Breakthrough' in s and 'Male' in s), None),
-				 next((s for s in cs if 'Best Actress' in s), None),
-				 next((s for s in cs if 'Breakthrough' in s and 'Female'), None),
-				 next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
-				 next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-				 next((s for s in cs if 'Animated' in s), None),
-				 next((s for s in cs if 'Cinematography' in s), None),
-				 next((s for s in cs if 'Costume Design' in s), None),
-				 next((s for s in cs if 'Director' in s), None),
-				 next((s for s in cs if 'Documentary' in s), None),
-				 next((s for s in cs if 'Film Editing' in s), None),
-				 next((s for s in cs if 'Foreign' in s), None),
-				 next((s for s in cs if 'Makeup' in s or 'Hair' in s), None),
-				 next((s for s in cs if 'Original Score' in s), None),
-				 next((s for s in cs if 'Original Song' in s), None),
-				 next((s for s in cs if 'Production Design' in s), None),
-				 next((s for s in cs if 'Sound' in s and 'Editing' in s), None),
-				 next((s for s in cs if 'Sound' in s and 'Mixing' in s), None),
-				 next((s for s in cs if 'Visual Effects' in s), None),
-				 next((s for s in cs if 'Screenplay' in s and 'Another'in s), None),
-				 next((s for s in cs if 'Screenplay' in s and 'Directly' in s), None)]
-	elif name == 'Online Film Critics Society':
-		order = [next((s for s in cs if 'Best Motion Picture' in s and 'Drama' in s), None),
-				 next((s for s in cs if 'Best Motion Picture' in s and 'Comedy' in s), None),
-				 next((s for s in cs if 'Actor' in s and 'Drama' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Actor' in s and 'Comedy' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Actress' in s and 'Drama' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Actress' in s and 'Comedy' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
-				 next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-				 next((s for s in cs if 'Animated' in s and 'Comedy' in s), None),
-				 next((s for s in cs if 'Director' in s), None),
-				 next((s for s in cs if 'Foreign' in s), None),
-				 next((s for s in cs if 'Original Score' in s), None),
-				 next((s for s in cs if 'Original Song' in s), None),
-				 next((s for s in cs if 'Screenplay' in s), None)]
-	elif name == 'Critics Choice':
-		order = [next((s for s in cs if 'Producer of Theatrical' in s), None),
-				 next((s for s in cs if 'Animated' in s), None),
-				 next((s for s in cs if 'Documentary' in s), None)]
-	elif name == 'London Critics Circle Film':
-		order = [next((s for s in cs if 'Producer of Theatrical' in s), None),
-				 next((s for s in cs if 'Animated' in s), None),
-				 next((s for s in cs if 'Documentary' in s), None)]
-	elif name == 'American Cinema Editors':
-		order = [next((s for s in cs if 'Producer of Theatrical' in s), None),
-				 next((s for s in cs if 'Animated' in s), None),
-				 next((s for s in cs if 'Documentary' in s), None)]
+	if name == 'gg':
+		cs = [c.replace(next((s for s in cs if 'Best Motion Picture' in s and 'Drama' in s), None), '0')\
+				.replace(next((s for s in cs if 'Best Motion Picture' in s and 'Comedy' in s), None), '0')\
+				.replace(next((s for s in cs if 'Actor' in s and 'Drama' in s and 'Supporting' not in s), None), '1')\
+				.replace(next((s for s in cs if 'Actor' in s and 'Comedy' in s and 'Supporting' not in s), None), '1')\
+				.replace(next((s for s in cs if 'Actress' in s and 'Drama' in s and 'Supporting' not in s), None), '2')\
+				.replace(next((s for s in cs if 'Actress' in s and 'Comedy' in s and 'Supporting' not in s), None), '2')\
+				.replace(next((s for s in cs if 'Actor' in s and 'Supporting' in s), None), '3')\
+				.replace(next((s for s in cs if 'Actress' in s and 'Supporting' in s), None), '4')\
+				.replace(next((s for s in cs if 'Animated' in s and 'Comedy' in s), None), '5')\
+				.replace(next((s for s in cs if 'Director' in s), None), '8')\
+				.replace(next((s for s in cs if 'Foreign' in s), None), '12')\
+				.replace(next((s for s in cs if 'Original Score' in s), None), '14')\
+				.replace(next((s for s in cs if 'Original Song' in s), None), '15')\
+				.replace(next((s for s in cs if 'Screenplay' in s), None), '22') for c in cs]
+	elif name == 'bafta':
+		cs = [c.replace(next((s for s in cs if 'Best Film' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None), '1') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' not in s), None), '2') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' in s), None), '3') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' in s), None), '4') \
+			 .replace(next((s for s in cs if 'Animated' in s and 'Short' not in s), None), '5') \
+			 .replace(next((s for s in cs if 'Cinematography' in s), None), '6') \
+			 .replace(next((s for s in cs if 'Costume Design' in s), None), '7') \
+			 .replace(next((s for s in cs if 'Documentary' in s), None), '9') \
+			 .replace(next((s for s in cs if 'Editing' in s), None), '11') \
+			 .replace(next((s for s in cs if 'not' in s and 'English' in s), None), '12') \
+			 .replace(next((s for s in cs if 'Make Up' in s or 'Hair' in s), None), '13') \
+			 .replace(next((s for s in cs if 'Production Design' in s), None), '16') \
+			 .replace(next((s for s in cs if 'Short' in s and 'Animated' in s), None), '17') \
+			 .replace(next((s for s in cs if 'Short' in s and 'Film' in s), None), '18')
+			 .replace(next((s for s in cs if 'Sound' in s), None), '19') \
+			 .replace(next((s for s in cs if 'Visual Effects' in s), None), '21') \
+			 .replace(next((s for s in cs if 'Screenplay' in s and 'Adapted' in s), None), '22') \
+			 .replace(next((s for s in cs if 'Screenplay' in s and 'Original' in s), None), '23') for c in cs]
+	elif name == 'sag':
+		cs = [c.replace(next((s for s in cs if 'Male' in s and 'Supporting' not in s), None), '1') \
+			 .replace(next((s for s in cs if 'Female' in s and 'Supporting' not in s), None), '2') \
+			 .replace(next((s for s in cs if 'Male' in s and 'Supporting' in s), None), '3') \
+			 .replace(next((s for s in cs if 'Female' in s and 'Supporting' in s), None), '4') for c in cs]
+	elif name == 'dg':
+		cs = [c.replace(next((s for s in cs if 'Feature' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Documentary' in s), None), '9') for c in cs]
+	elif name == 'pg':
+		cs = [c.replace(next((s for s in cs if 'Producer of Theatrical' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Animated' in s), None), '5') \
+			 .replace(next((s for s in cs if 'Documentary' in s), None), '9') for c in cs]
+	elif name == 'adg':
+		cs = [c.replace(next((s for s in cs if 'Period' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Fantasy' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Contemporary' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Animated' in s), None), '0') for c in cs]
+	elif name == 'wg':
+		cs = [c.replace(next((s for s in cs if 'Adapted' in s), None), '22') \
+			 .replace(next((s for s in cs if 'Original' in s), None), '23') for c in cs]
+	elif name == 'cdg':
+		cs = [c.replace(next((s for s in cs if 'Period' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Fantasy' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Contemporary' in s), None), '0') for c in cs]
+	elif name == 'ofta':
+		cs = [c.replace(next((s for s in cs if 'Best Picture' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Best Actor' in s), None), '1') \
+			 .replace(next((s for s in cs if 'Breakthrough' in s and 'Male' in s), None), '1') \
+			 .replace(next((s for s in cs if 'Best Actress' in s), None), '2') \
+			 .replace(next((s for s in cs if 'Breakthrough' in s and 'Female' in s), None), '2') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' in s), None), '3') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' in s), None), '4') \
+			 .replace(next((s for s in cs if 'Animated' in s), None), '5') \
+			 .replace(next((s for s in cs if 'Cinematography' in s), None), '6') \
+			 .replace(next((s for s in cs if 'Costume Design' in s), None), '7') \
+			 .replace(next((s for s in cs if 'Director' in s), None), '8') \
+			 .replace(next((s for s in cs if 'Documentary' in s), None), '9') \
+			 .replace(next((s for s in cs if 'Film Editing' in s), None), '11') \
+			 .replace(next((s for s in cs if 'Foreign' in s), None), '12') \
+			 .replace(next((s for s in cs if 'Makeup' in s or 'Hair' in s), None), '13') \
+			 .replace(next((s for s in cs if 'Original Score' in s), None), '14') \
+			 .replace(next((s for s in cs if 'Original Song' in s), None), '15') \
+			 .replace(next((s for s in cs if 'Production Design' in s), None), '16') \
+			 .replace(next((s for s in cs if 'Sound' in s and 'Editing' in s), None), '19') \
+			 .replace(next((s for s in cs if 'Sound' in s and 'Mixing' in s), None), '20') \
+			 .replace(next((s for s in cs if 'Visual Effects' in s), None), '21') \
+			 .replace(next((s for s in cs if 'Screenplay' in s and 'Another' in s), None), '22') \
+			 .replace(next((s for s in cs if 'Screenplay' in s and 'Directly' in s), None), '23') for c in cs]
+	elif name == 'ofcs':
+		cs = [c.replace(next((s for s in cs if 'Best Picture' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None), '1') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' not in s), None), '2') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' in s), None), '3') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' in s), None), '4') \
+			 .replace(next((s for s in cs if 'Animated' in s), None), '5') \
+			 .replace(next((s for s in cs if 'Cinematography' in s), None), '6') \
+			 .replace(next((s for s in cs if 'Costume Design' in s), None), '7') \
+			 .replace(next((s for s in cs if 'Director' in s), None), '8') \
+			 .replace(next((s for s in cs if 'Documentary' in s), None), '9') \
+			 .replace(next((s for s in cs if 'Editing' in s), None), '11') \
+			 .replace(next((s for s in cs if 'Not' in s and 'English' in s), None), '12') \
+			 .replace(next((s for s in cs if 'Original Score' in s), None), '14') \
+			 .replace(next((s for s in cs if 'Original Song' in s), None), '15') \
+			 .replace(next((s for s in cs if 'Sound' in s), None), ['19', '20']) \
+			 .replace(next((s for s in cs if 'Visual Effects' in s), None), '21') \
+			 .replace(next((s for s in cs if 'Screenplay' in s and 'Adapted'), None), '22') \
+			 .replace(next((s for s in cs if 'Screenplay' in s and 'Original'), None), '23') for c in cs]
+	elif name == 'cc':
+		cs = [c.replace(next((s for s in cs if 'Best Picture' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Best Action Movie' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Best Comedy' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Best Sci-Fi' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Comedy' not in s and 'Supporting' not in s), None), '1') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Comedy' in s and 'Supporting' not in s), None), '1') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Comedy' not in s and 'Supporting' not in s), None), '2') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Comedy' in s and 'Supporting' not in s), None), '2') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' in s), None), '3') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' in s), None), '4') \
+			 .replace(next((s for s in cs if 'Animated' in s), None), '5') \
+			 .replace(next((s for s in cs if 'Cinematography' in s), None), '6') \
+			 .replace(next((s for s in cs if 'Costume Design' in s), None), '7') \
+			 .replace(next((s for s in cs if 'Director' in s), None), '8') \
+			 .replace(next((s for s in cs if 'Editing' in s), None), '9') \
+			 .replace(next((s for s in cs if 'Foreign' in s), None), '10') \
+			 .replace(next((s for s in cs if 'Makeup' in s or 'Hair' in s), None), '11') \
+			 .replace(next((s for s in cs if 'Score' in s), None), '12') \
+			 .replace(next((s for s in cs if 'Song' in s), None), '13') \
+			 .replace(next((s for s in cs if 'Production Design' in s), None), '14') \
+			 .replace(next((s for s in cs if 'Visual Effects' in s), None), '15') \
+			 .replace(next((s for s in cs if 'Adapted Screenplay' in s), None), '16') \
+			 .replace(next((s for s in cs if 'Original Screenplay' in s), None), '17') for c in cs]
+	elif name == 'lccf':
+		cs = [c.replace(next((s for s in cs if 'Film' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None), '1') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' not in s), None), '2') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' in s), None), '3') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' in s), None), '4') \
+			 .replace(next((s for s in cs if 'Director' in s), None), '5') \
+			 .replace(next((s for s in cs if 'Documentary' in s), None), '9') \
+			 .replace(next((s for s in cs if 'Foreign' in s), None), '7') for c in cs]
+	elif name == 'ace':
+		cs = [c.replace(next((s for s in cs if 'Feature Film' in s and 'Drama' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Feature Film' in s and 'Comedy' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Animated' in s), None), '5') \
+			 .replace(next((s for s in cs if 'Documentary' in s), None), '9') for c in cs]
 	else:  # Oscars
-		order = [next((s for s in cs if 'Best Motion Picture' in s and 'Drama' in s), None),
-				 next((s for s in cs if 'Best Motion Picture' in s and 'Comedy' in s), None),
-				 next((s for s in cs if 'Actor' in s and 'Drama' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Actor' in s and 'Comedy' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Actress' in s and 'Drama' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Actress' in s and 'Comedy' in s and 'Supporting' not in s), None),
-				 next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
-				 next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-				 next((s for s in cs if 'Animated' in s and 'Comedy' in s), None),
-				 next((s for s in cs if 'Director' in s), None),
-				 next((s for s in cs if 'Foreign' in s), None),
-				 next((s for s in cs if 'Original Score' in s), None),
-				 next((s for s in cs if 'Original Song' in s), None),
-				 next((s for s in cs if 'Screenplay' in s), None)]
-
-	order = [i for i in order if i is not None]
-	return order
+		cs = [c.replace(next((s for s in cs if 'Picture' in s), None), '0') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Leading' in s), None), '1') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Leading' in s), None), '2') \
+			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' in s), None), '3') \
+			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' in s), None), '4') \
+			 .replace(next((s for s in cs if 'Animated' in s and 'Short' not in s), None), '5') \
+			 .replace(next((s for s in cs if 'Cinematography' in s), None), '6') \
+			 .replace(next((s for s in cs if 'Costume Design' in s), None), '7') \
+			 .replace(next((s for s in cs if 'Direct' in s), None), '8') \
+			 .replace(next((s for s in cs if 'Documentary' in s), None), '9') \
+			 .replace(next((s for s in cs if 'Documentary' in s and 'Short' in s), None), '9') \
+			 .replace(next((s for s in cs if 'Film Editing' in s), None), '11') \
+			 .replace(next((s for s in cs if 'Foreign' in s), None), '12') \
+			 .replace(next((s for s in cs if 'Makeup' in s or 'Hair' in s), None), '13') \
+			 .replace(next((s for s in cs if 'Original Score' in s), None), '14') \
+			 .replace(next((s for s in cs if 'Original Song' in s), None), '15') \
+			 .replace(next((s for s in cs if 'Production Design' in s), None), '16') \
+			 .replace(next((s for s in cs if 'Short' in s and 'Animated' in s), None), '17') \
+			 .replace(next((s for s in cs if 'Short' in s and 'Live' in s), None), '18') \
+			 .replace(next((s for s in cs if 'Sound' in s and 'Editing' in s), None), '19') \
+			 .replace(next((s for s in cs if 'Sound' in s and 'Mixing' in s), None), '20') \
+			 .replace(next((s for s in cs if 'Visual Effects' in s), None), '21') \
+			 .replace(next((s for s in cs if 'Screenplay' in s and 'Adapted' in s), None), '22') \
+			 .replace(next((s for s in cs if 'Screenplay' in s and 'Original' in s), None), '23') for c in cs]
+	return cs
