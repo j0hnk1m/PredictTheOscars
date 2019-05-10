@@ -259,32 +259,27 @@ def order_categories(name, aw, cs):
 				   next((s for s in cs if 'Original Song' in s), None),
 				   next((s for s in cs if 'Screenplay' in s), None)]
 		id = [0, 0, 1, 1, 2, 2, 3, 4, 5, 8, 12, 14, 15, 22]
-		none_index = [i for i in replace if i is None]
-		cs = [c for c in cs if c not in none_index]
-		aw = [a for a in aw if a not in none_index]
-
-		for i, c in enumerate(cs):
-			cs[i] = str(id[i])
 	elif name == 'bafta':
-		cs = [c.replace(next((s for s in cs if 'Best Film' in s), None), '0') \
-			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None), '1') \
-			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' not in s), None), '2') \
-			 .replace(next((s for s in cs if 'Actor' in s and 'Supporting' in s), None), '3') \
-			 .replace(next((s for s in cs if 'Actress' in s and 'Supporting' in s), None), '4') \
-			 .replace(next((s for s in cs if 'Animated' in s and 'Short' not in s), None), '5') \
-			 .replace(next((s for s in cs if 'Cinematography' in s), None), '6') \
-			 .replace(next((s for s in cs if 'Costume Design' in s), None), '7') \
-			 .replace(next((s for s in cs if 'Documentary' in s), None), '9') \
-			 .replace(next((s for s in cs if 'Editing' in s), None), '11') \
-			 .replace(next((s for s in cs if 'not' in s and 'English' in s), None), '12') \
-			 .replace(next((s for s in cs if 'Make Up' in s or 'Hair' in s), None), '13') \
-			 .replace(next((s for s in cs if 'Production Design' in s), None), '16') \
-			 .replace(next((s for s in cs if 'Short' in s and 'Animated' in s), None), '17') \
-			 .replace(next((s for s in cs if 'Short' in s and 'Film' in s), None), '18')
-			 .replace(next((s for s in cs if 'Sound' in s), None), '19') \
-			 .replace(next((s for s in cs if 'Visual Effects' in s), None), '21') \
-			 .replace(next((s for s in cs if 'Screenplay' in s and 'Adapted' in s), None), '22') \
-			 .replace(next((s for s in cs if 'Screenplay' in s and 'Original' in s), None), '23') for c in cs]
+		replace = [next((s for s in cs if 'Best Film' in s), None),
+			 next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None),
+			 next((s for s in cs if 'Actress' in s and 'Supporting' not in s), None),
+			 next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
+			 next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
+			 next((s for s in cs if 'Animated' in s and 'Short' not in s), None),
+			 next((s for s in cs if 'Cinematography' in s), None),
+			 next((s for s in cs if 'Costume Design' in s), None),
+			 next((s for s in cs if 'Documentary' in s), None),
+			 next((s for s in cs if 'Editing' in s), None),
+			 next((s for s in cs if 'not' in s and 'English' in s), None),
+			 next((s for s in cs if 'Make Up' in s or 'Hair' in s), None),
+			 next((s for s in cs if 'Production Design' in s), None),
+			 next((s for s in cs if 'Short' in s and 'Animated' in s), None),
+			 next((s for s in cs if 'Short' in s and 'Film' in s), None),
+			 next((s for s in cs if 'Sound' in s), None),
+			 next((s for s in cs if 'Visual Effects' in s), None),
+			 next((s for s in cs if 'Screenplay' in s and 'Adapted' in s), None),
+			 next((s for s in cs if 'Screenplay' in s and 'Original' in s), None)]
+		id = [0, 1, 2, 3, 4, 5, 6, 7, 9, 11, 12, 13, 16, 17, 18, 19, 21, 22, 23]
 	elif name == 'sag':
 		cs = [c.replace(next((s for s in cs if 'Male' in s and 'Supporting' not in s), None), '1') \
 			 .replace(next((s for s in cs if 'Female' in s and 'Supporting' not in s), None), '2') \
@@ -415,4 +410,11 @@ def order_categories(name, aw, cs):
 			 .replace(next((s for s in cs if 'Visual Effects' in s), None), '21') \
 			 .replace(next((s for s in cs if 'Screenplay' in s and 'Adapted' in s), None), '22') \
 			 .replace(next((s for s in cs if 'Screenplay' in s and 'Original' in s), None), '23') for c in cs]
+
+	none_index = [i for i in replace if i is None]
+	cs = [c for c in cs if c not in none_index]
+	aw = [a for a in aw if a not in none_index]
+
+	for i, c in enumerate(cs):
+		cs[i] = str(id[i])
 	return cs
