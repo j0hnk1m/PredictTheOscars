@@ -69,38 +69,57 @@ def main():
 	# df.to_csv('./data/combined.csv')
 	df = pd.read_csv('./data/combined.csv', index_col=0)
 
-	categories = []
-	awards = []
-	for y in range(2000, 2019):
-		print(y)
-		results = collect_data.movie_awards(y)
-		categories.append(results[0])
-		awards.append(results[1])
-
-	with open('categories', 'wb') as f:
-		pickle.dump(categories, f)
-	with open('awards', 'wb') as f:
-		pickle.dump(awards, f)
+	# categories = []
+	# awards = []
+	# for y in range(2000, 2019):
+	# 	print(y)
+	# 	results = collect_data.movie_awards(y)
+	# 	categories.append(results[0])
+	# 	awards.append(results[1])
+	# with open('categories', 'wb') as f:
+	# 	pickle.dump(categories, f)
+	# with open('awards', 'wb') as f:
+	# 	pickle.dump(awards, f)
 
 	with open('categories', 'rb') as f:
 		categories = pickle.load(f)
 	with open('awards', 'rb') as f:
 		awards = pickle.load(f)
 
-	ggs = [i[0] for i in categories]
-	baftas = [i[1] for i in categories]
-	sags = [i[2] for i in categories]
-	dgs = [i[3] for i in categories]
-	pgs = [i[4] for i in categories]
-	adgs = [i[5] for i in categories]
-	wgs = [i[6] for i in categories]
-	cdgs = [i[7] for i in categories]
-	oftas = [i[8] for i in categories]
-	ofcss = [i[9] for i in categories]
-	ccs = [i[10] for i in categories]
-	lccfs = [i[11] for i in categories]
-	aces = [i[12] for i in categories]
-	oscars = [i[13] for i in categories]
+	gg_cs = [i[0] for i in categories]
+	gg_aw = [i[0] for i in awards]
+	bafta_cs = [i[1] for i in categories]
+	bafta_aw = [i[1] for i in awards]
+	sag_cs = [i[2] for i in categories]
+	sag_aw = [i[2] for i in awards]
+	dg_cs = [i[3] for i in categories]
+	dg_aw = [i[3] for i in awards]
+	pg_cs = [i[4] for i in categories]
+	pg_aw = [i[4] for i in awards]
+	adg_cs = [i[5] for i in categories]
+	adg_aw = [i[5] for i in awards]
+	wg_cs = [i[6] for i in categories]
+	wg_aw = [i[6] for i in awards]
+	cdg_cs = [i[7] for i in categories]
+	cdg_aw = [i[7] for i in awards]
+	ofta_cs = [i[8] for i in categories]
+	ofta_aw = [i[8] for i in awards]
+	ofcs_cs = [i[9] for i in categories]
+	ofcs_aw = [i[9] for i in awards]
+	cc_cs = [i[10] for i in categories]
+	cc_aw = [i[10] for i in awards]
+	lccf_cs = [i[11] for i in categories]
+	lccf_aw = [i[11] for i in awards]
+	ace_cs = [i[12] for i in categories]
+	ace_aw = [i[12] for i in awards]
+	oscar_cs = [i[13] for i in categories]
+	oscar_aw = [i[13] for i in awards]
+
+	start = df.columns.get_loc('best_picture')
+	for i, year in enumerate(categories):
+		for j, event in enumerate(year):
+			for k, award in enumerate(event):
+				
 
 if __name__ == '__main__':
 	main()
