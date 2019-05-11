@@ -119,7 +119,11 @@ def main():
 	for i, year in enumerate(categories):
 		for j, event in enumerate(year):
 			for k, award in enumerate(event):
-				
+				for l, movie in enumerate(awards[i][j][k]):
+					if l == 0: points = 1
+					else: points = 0.5
+					movieIndex = df.index[df.movie == movie][0]
+					df.set_value(movieIndex, [df.columns[start + int(k)]], points)
 
 if __name__ == '__main__':
 	main()
