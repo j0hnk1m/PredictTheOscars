@@ -110,6 +110,7 @@ def scrape_movie_awards(year):
 	# 11. Critics Choice
 	# 12. London Critics Circle Film
 	# 13. American Cinema Editors
+
 	# 14. Oscar
 
 	gg_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[0]) if 'Television' not in i][:14]
@@ -164,7 +165,7 @@ def scrape_movie_awards(year):
 	adg_categories, adg = id_categories('adg', adg_categories, adg)
 
 	wg_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[6]) if 'Original Screenplay'
-					 in i or 'Adapted Screenplay' in i][:2]
+					 in i or 'Adapted Screenplay' in i or i == 'Documentary Screenplay'][:3]
 	wg = []
 	for c in wg_categories:
 		wg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[6])[:-1])
@@ -244,8 +245,8 @@ def scrape_movie_awards(year):
 				oscar.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[13])[:-1])
 	oscar_categories, oscar = id_categories('oscar', oscar_categories, oscar)
 
-	return [gg_categories, bafta_categories, sag_categories, dg_categories, pg_categories, adg_categories, wg_categories, cdg_categories, ofta_categories, ofcs_categories, cc_categories, lccf_categories, ace_categories, oscar_categories],\
-		   [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace, oscar]
+	return [gg_categories, bafta_categories, sag_categories, dg_categories, pg_categories, adg_categories, wg_categories, cdg_categories, ofta_categories, ofcs_categories, cc_categories, lccf_categories, ace_categories],\
+		   [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace], oscar_categories, oscar
 
 
 def id_categories(name, cs, aw):
@@ -306,11 +307,12 @@ def id_categories(name, cs, aw):
 			 next((s for s in cs if 'Fantasy' in s), None),
 			 next((s for s in cs if 'Contemporary' in s), None),
 			 next((s for s in cs if 'Animated' in s), None)]
-		id = [0, 0, 0, 0]
+		id = [0, 0, 0, 5]
 	elif name == 'wg':
-		replace = [next((s for s in cs if 'Adapted' in s), None),
+		replace = [next((s for s in cs if 'Documentary' in s), None),
+			next((s for s in cs if 'Adapted' in s), None),
 			 next((s for s in cs if 'Original' in s), None)]
-		id = [22, 23]
+		id = [9, 22, 23]
 	elif name == 'cdg':
 		replace = [next((s for s in cs if 'Period' in s), None),
 			 next((s for s in cs if 'Fantasy' in s), None),
@@ -365,7 +367,7 @@ def id_categories(name, cs, aw):
 		replace = [next((s for s in cs if 'Best Picture' in s), None),
 			 next((s for s in cs if 'Best Action Movie' in s), None),
 			 next((s for s in cs if 'Best Comedy' in s), None),
-			 next((s for s in cs if 'Best Sci-Fi' in s), None),
+			 next((s for s in cs if 'Best Sci-Fi' in s or 'Best Horror' in s), None),
 			 next((s for s in cs if 'Actor' in s and 'Comedy' not in s and 'Supporting' not in s), None),
 			 next((s for s in cs if 'Actor' in s and 'Comedy' in s and 'Supporting' not in s), None),
 			 next((s for s in cs if 'Actress' in s and 'Comedy' not in s and 'Supporting' not in s), None),
@@ -385,7 +387,7 @@ def id_categories(name, cs, aw):
 			 next((s for s in cs if 'Visual Effects' in s), None),
 			 next((s for s in cs if 'Adapted Screenplay' in s), None),
 			 next((s for s in cs if 'Original Screenplay' in s), None)]
-		id = [0, 0, 0, 0, 1, 1, 2, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+		id = [0, 0, 0, 0, 1, 1, 2, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 16, 21, 22, 23]
 	elif name == 'lccf':
 		replace = [next((s for s in cs if 'Film' in s), None),
 			 next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None),
@@ -395,7 +397,7 @@ def id_categories(name, cs, aw):
 			 next((s for s in cs if 'Director' in s), None),
 			 next((s for s in cs if 'Documentary' in s), None),
 			 next((s for s in cs if 'Foreign' in s), None)]
-		id = [0, 1, 2, 3, 4, 5, 9, 12]
+		id = [0, 1, 2, 3, 4, 8, 9, 12]
 	elif name == 'ace':
 		replace = [next((s for s in cs if 'Feature Film' in s and 'Drama' in s), None),
 			 next((s for s in cs if 'Feature Film' in s and 'Comedy' in s), None),

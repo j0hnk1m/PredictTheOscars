@@ -55,29 +55,41 @@ def build_model(type):
 
 
 def add_award_points(dataframe):
-	if os.path.exists('./data/categories') and os.path.exists('./data/awards'):
+	if os.path.exists('./data/categories') and os.path.exists('./data/awards') and os.path.exists('./data/oscar_cs') and os.path.exists('./data/oscar_aw'):
 		with open('./data/categories', 'rb') as f:
 			categories = pickle.load(f)
 		with open('./data/awards', 'rb') as f:
 			awards = pickle.load(f)
+		with open('./data/oscar_cs', 'rb') as f:
+			oscar_cs = pickle.load(f)
+		with open('./data/oscar_aw', 'rb') as f:
+			oscar_aw = pickle.load(f)
 	else:
 		categories = []
 		awards = []
+		oscar_cs = []
+		oscar_aw = []
 		for y in range(2000, 2019):
 			print(y)
 			results = collect_data.scrape_movie_awards(y)
 			categories.append(results[0])
 			awards.append(results[1])
+			oscar_cs.append(results[2])
+			oscar_aw.append(results[3])
 		with open('./data/categories', 'wb') as f:
 			pickle.dump(categories, f)
 		with open('./data/awards', 'wb') as f:
 			pickle.dump(awards, f)
+		with open('./data/oscar_cs', 'wb') as f:
+			pickle.dump(oscar_cs, f)
+		with open('./data/oscar_aw', 'wb') as f:
+			pickle.dump(oscar_aw, f)
 
 	# Ensures that all movies' award points start at 0
 	for i in dataframe.columns[16:]:
 		dataframe[i] = 0
 
-	# Adds points to all of the movies that have won/been nominated for awards in all categories
+	# Adds points to all of the movies that have won/been nominated for awards in all categories (except Oscar)
 	start = dataframe.columns.get_loc('best_picture')
 	for i, year in enumerate(categories):
 		for j, event in enumerate(year):
@@ -86,13 +98,30 @@ def add_award_points(dataframe):
 					index = dataframe.index[(dataframe.movie == movie)&((dataframe.year == 2000 + i)|(dataframe.year == 2000 + i + 1)|(dataframe.year == 2000 + i - 1))]
 					if len(index) != 0:
 						print(str(i) + ", " + str(j) + ", " + str(k) + ", " + str(l))
-						print(movie)
-						print()
+						print(movie + '\n')
 						if l == 0: points = 1
 						else: points = 0.5
 						dataframe.loc[index[0], dataframe.columns[start + int(award)]] += points
 
-	
+	# Oscar points for data labels
+	oscar_start = dataframe.columns.get_loc('oscar_best_picture')
+	for i, year in enumerate(oscar_cs):
+		for j, award in enumerate(year):
+			for l, movie in enumerate(oscar_aw[i][j]):
+				index = dataframe.index[(dataframe.movie == movie)&((dataframe.year == 2000 + i)|(dataframe.year == 2000 + i + 1)|(dataframe.year == 2000 + i - 1))]
+				if len(index) != 0:
+					print(str(i) + ", " + str(j) + ", " + str(l))
+					print(movie)
+					print(str(dataframe.loc[index[0], dataframe.columns[oscar_start + int(award)]]))
+					if l == 0: points = 1
+					else: points = 0.5
+					dataframe.loc[index[0], dataframe.columns[oscar_start + int(award)]] = points
+					print(str(dataframe.loc[index[0], dataframe.columns[oscar_start + int(award)]]) + '\n')
+
+	# Computes average sum by dividing the award points by the number of award ceremonies the movie could have won in
+	N = [11, 7, 7, 7, 7, 8, 4, 4, 5, 8, 1, 4, 6, 3, 4, 4, 3, 1, 1, 3, 1, 4, 6, 5]
+	for i, col in enumerate(dataframe.columns[16:oscar_start]):
+		dataframe[col] /= N[i]
 
 	return dataframe
 
@@ -104,17 +133,10 @@ def main():
 	# df = bigml.append(imdb, sort=False, ignore_index=True)
 	# df.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
 	# df = df.reset_index(drop=True)
-	# df.to_csv('./data/combined.csv')
 
 	df = pd.read_csv('./data/combined.csv', index_col=0)
-	df, missing = add_award_points(df)
-
-
-	with open('./data/categories', 'rb') as f:
-		categories = pickle.load(f)
-	with open('./data/awards', 'rb') as f:
-		awards = pickle.load(f)
-
+	df = add_award_points(df)
+	df.to_csv('./data/combined.csv')
 
 
 if __name__ == '__main__':
