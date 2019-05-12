@@ -85,12 +85,13 @@ def add_award_points(dataframe):
 		with open('./data/oscar_aw', 'wb') as f:
 			pickle.dump(oscar_aw, f)
 
-	# Ensures that all movies' award points start at 0
-	for i in dataframe.columns[16:]:
-		dataframe[i] = 0
-
 	# Adds points to all of the movies that have won/been nominated for awards in all categories (except Oscar)
 	start = dataframe.columns.get_loc('best_picture')
+
+	# Ensures that all movies' award points start at 0
+	for i in dataframe.columns[start:]:
+		dataframe[i] = 0
+
 	for i, year in enumerate(categories):
 		for j, event in enumerate(year):
 			for k, award in enumerate(event):
