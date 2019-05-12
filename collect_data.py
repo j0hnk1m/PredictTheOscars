@@ -89,7 +89,7 @@ def movie_tags(id):
 	return tags
 
 
-def movie_awards(year):
+def scrape_movie_awards(year):
 	events = ['ev0000292', 'ev0000123', 'ev0000598', 'ev0000212', 'ev0000531', 'ev0000618', 'ev0000710',
 			  'ev0000190', 'ev0002704', 'ev0000511', 'ev0000133', 'ev0000403', 'ev0000017', 'ev0000003']
 
@@ -115,11 +115,11 @@ def movie_awards(year):
 	gg_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[0]) if 'Television' not in i][:14]
 	gg = []
 	for c in gg_categories:
-		if 'Actor' in c or 'Actress' in c or 'Director' in c:
+		if 'Actor' in c or 'Actress' in c or 'Director' in c or (year == 2014 and 'Original Score' in c):
 			gg.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*?)","note":null', htmls[0])[:-1])
 		else:
 			gg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[0])[:-1])
-	gg_categories, gg = order_categories('gg', gg_categories, gg)
+	gg_categories, gg = id_categories('gg', gg_categories, gg)
 
 	bafta_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[1]) if 'British' not in i and 'Best' in i and 'Series' not in i and 'Television' not in i and 'Features' not in i][:19]
 	bafta = []
@@ -128,7 +128,7 @@ def movie_awards(year):
 			bafta.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*?)","note":null', htmls[1])[:5])
 		else:
 			bafta.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[1])[:-1])
-	bafta_categories, bafta = order_categories('bafta', bafta_categories, bafta)
+	bafta_categories, bafta = id_categories('bafta', bafta_categories, bafta)
 
 	sag_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[2]) if 'Series' not in i and 'Motion Picture' not in i and 'Stunt' not in i and 'Cast' not in i][:4]
 	sag = []
@@ -137,13 +137,13 @@ def movie_awards(year):
 			sag.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*?)","note":null', htmls[2])[:-1])
 		else:
 			sag.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[2])[:-1])
-	sag_categories, sag = order_categories('sag', sag_categories, sag)
+	sag_categories, sag = id_categories('sag', sag_categories, sag)
 
 	dg_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[3]) if 'Feature Film' in i or 'Motion' or 'Documentary' in i and 'First' not in i][:2]
 	dg = []
 	for c in dg_categories:
 		dg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[3])[:-1])
-	dg_categories, dg = order_categories('dg', dg_categories, dg)
+	dg_categories, dg = id_categories('dg', dg_categories, dg)
 
 	pg_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[4]) if 'Producer of' in i and 'Theatrical Motion Pictures' in i][:3]
 	pg = []
@@ -152,7 +152,7 @@ def movie_awards(year):
 			pg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[4])[:-1])
 		else:
 			pg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[4]))
-	pg_categories, pg = order_categories('pg', pg_categories, pg)
+	pg_categories, pg = id_categories('pg', pg_categories, pg)
 
 	adg_categories = [i for i in re.findall('"categoryName":"([^"]*)","nominations"', htmls[5]) if 'Film' in i][:4]
 	adg = []
@@ -161,21 +161,21 @@ def movie_awards(year):
 			adg.append(['A.I. Artificial Intelligence'])
 		else:
 			adg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[5])[:-1])
-	adg_categories, adg = order_categories('adg', adg_categories, adg)
+	adg_categories, adg = id_categories('adg', adg_categories, adg)
 
 	wg_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[6]) if 'Original Screenplay'
 					 in i or 'Adapted Screenplay' in i][:2]
 	wg = []
 	for c in wg_categories:
 		wg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[6])[:-1])
-	wg_categories, wg = order_categories('wg', wg_categories, wg)
+	wg_categories, wg = id_categories('wg', wg_categories, wg)
 
 	cdg_categories  = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[7]) if 'Contemporary Film' in i
 					  or 'Period Film' in i or 'Fantasy Film' in i][:3]
 	cdg = []
 	for c in cdg_categories:
 		cdg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[7])[:-1])
-	cdg_categories, cdg = order_categories('cdg', cdg_categories, cdg)
+	cdg_categories, cdg = id_categories('cdg', cdg_categories, cdg)
 
 	ofta_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[8]) if 'Series' not in i and 'Ensemble' not in i
 					   and 'Television' not in i and 'Actors and Actresses' not in i and 'Creative' not in i and 'Program' not in i
@@ -187,7 +187,7 @@ def movie_awards(year):
 			ofta.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*?)","note":null', htmls[8])[:-1])
 		else:
 			ofta.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[8])[:-1])
-	ofta_categories, ofta = order_categories('ofta', ofta_categories, ofta)
+	ofta_categories, ofta = id_categories('ofta', ofta_categories, ofta)
 
 	ofcs_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[9]) if 'Debut' not in i
 					   and 'Stunt' not in i and 'Television' not in i and 'Series' not in i][:18]
@@ -197,7 +197,7 @@ def movie_awards(year):
 			ofcs.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*?)","note":null', htmls[9])[:-1])
 		else:
 			ofcs.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[9])[:-1])
-	ofcs_categories, ofcs = order_categories('ofcs', ofcs_categories, ofcs)
+	ofcs_categories, ofcs = id_categories('ofcs', ofcs_categories, ofcs)
 
 	cc_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[10]) if 'Series' not in i
 					 and 'Young' not in i and 'Ensemble' not in i and 'TV' not in i and 'Television' not in i and 'Show' not in i][:23]
@@ -207,7 +207,7 @@ def movie_awards(year):
 			cc.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*?)","note":null', htmls[10])[:-1])
 		else:
 			cc.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[10])[:-1])
-	cc_categories, cc = order_categories('cc', cc_categories, cc)
+	cc_categories, cc = id_categories('cc', cc_categories, cc)
 
 	lccf_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[11]) if 'British' not in i
 					   and 'Technical' not in i and 'Screenwriter' not in i and 'Television' not in i][:8]
@@ -217,7 +217,7 @@ def movie_awards(year):
 			lccf.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*?)","note":null', htmls[11])[:-1])
 		else:
 			lccf.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[11])[:-1])
-	lccf_categories, lccf = order_categories('lccf', lccf_categories, lccf)
+	lccf_categories, lccf = id_categories('lccf', lccf_categories, lccf)
 
 	ace_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[12]) if 'Series' not in i
 					  and 'Non-Theatrical' not in i and 'Television' not in i and 'Student' not in i][:4]
@@ -227,7 +227,7 @@ def movie_awards(year):
 			ace.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*?)","note":null', htmls[12])[:-1])
 		else:
 			ace.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[12])[:-1])
-	ace_categories, ace = order_categories('ace', ace_categories, ace)
+	ace_categories, ace = id_categories('ace', ace_categories, ace)
 
 	oscar_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[13])][:24]
 	oscar = []
@@ -242,13 +242,13 @@ def movie_awards(year):
 				oscar.append(re.findall(re.escape(c) + '",(?:.*?)"secondaryNominees":\[{"name":"([^"]*?)","note":null', htmls[13])[:-1])
 			else:
 				oscar.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[13])[:-1])
-	oscar_categories, oscar = order_categories('oscar', oscar_categories, oscar)
+	oscar_categories, oscar = id_categories('oscar', oscar_categories, oscar)
 
 	return [gg_categories, bafta_categories, sag_categories, dg_categories, pg_categories, adg_categories, wg_categories, cdg_categories, ofta_categories, ofcs_categories, cc_categories, lccf_categories, ace_categories, oscar_categories],\
 		   [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace, oscar]
 
 
-def order_categories(name, cs, aw):
+def id_categories(name, cs, aw):
 	if name == 'gg':
 		replace = [next((s for s in cs if 'Best Motion Picture' in s and 'Drama' in s), None),
 				   next((s for s in cs if 'Best Motion Picture' in s and 'Comedy' in s), None),

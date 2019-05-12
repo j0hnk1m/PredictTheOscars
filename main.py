@@ -44,12 +44,6 @@ def extract_movie_data():
 	return imdb
 
 
-def edit_bigml():
-	bigml = pd.read_csv('./data/bigml.csv', index_col=0)
-	bigml = bigml.fillna(value={'gross': -1, 'popularity': -1})
-	bigml.to_csv('./data/bigml.csv')
-
-
 def build_model(type):
 	if type == 'svm':
 		model = svm.SVC(kernel='linear')
@@ -60,70 +54,68 @@ def build_model(type):
 		model.add(Dense(1, activation='sigmoid'))
 
 
+def add_award_points(dataframe):
+	if os.path.exists('./data/categories') and os.path.exists('./data/awards'):
+		with open('./data/categories', 'rb') as f:
+			categories = pickle.load(f)
+		with open('./data/awards', 'rb') as f:
+			awards = pickle.load(f)
+	else:
+		categories = []
+		awards = []
+		for y in range(2000, 2019):
+			print(y)
+			results = collect_data.scrape_movie_awards(y)
+			categories.append(results[0])
+			awards.append(results[1])
+		with open('./data/categories', 'wb') as f:
+			pickle.dump(categories, f)
+		with open('./data/awards', 'wb') as f:
+			pickle.dump(awards, f)
+
+	# Ensures that all movies' award points start at 0
+	for i in dataframe.columns[16:]:
+		dataframe[i] = 0
+
+	# Adds points to all of the movies that have won/been nominated for awards in all categories
+	start = dataframe.columns.get_loc('best_picture')
+	for i, year in enumerate(categories):
+		for j, event in enumerate(year):
+			for k, award in enumerate(event):
+				for l, movie in enumerate(awards[i][j][k]):
+					index = dataframe.index[(dataframe.movie == movie)&((dataframe.year == 2000 + i)|(dataframe.year == 2000 + i + 1)|(dataframe.year == 2000 + i - 1))]
+					if len(index) != 0:
+						print(str(i) + ", " + str(j) + ", " + str(k) + ", " + str(l))
+						print(movie)
+						print()
+						if l == 0: points = 1
+						else: points = 0.5
+						dataframe.loc[index[0], dataframe.columns[start + int(award)]] += points
+
+	
+
+	return dataframe
+
+
 def main():
 	# bigml = pd.read_csv('./data/bigml.csv', index_col=0)
+	# bigml = bigml.fillna(value={'gross': -1, 'popularity': -1})
 	# imdb = extract_movie_data()
 	# df = bigml.append(imdb, sort=False, ignore_index=True)
 	# df.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
 	# df = df.reset_index(drop=True)
 	# df.to_csv('./data/combined.csv')
+
 	df = pd.read_csv('./data/combined.csv', index_col=0)
+	df, missing = add_award_points(df)
 
-	# categories = []
-	# awards = []
-	# for y in range(2000, 2019):
-	# 	print(y)
-	# 	results = collect_data.movie_awards(y)
-	# 	categories.append(results[0])
-	# 	awards.append(results[1])
-	# with open('categories', 'wb') as f:
-	# 	pickle.dump(categories, f)
-	# with open('awards', 'wb') as f:
-	# 	pickle.dump(awards, f)
 
-	with open('categories', 'rb') as f:
+	with open('./data/categories', 'rb') as f:
 		categories = pickle.load(f)
-	with open('awards', 'rb') as f:
+	with open('./data/awards', 'rb') as f:
 		awards = pickle.load(f)
 
-	gg_cs = [i[0] for i in categories]
-	gg_aw = [i[0] for i in awards]
-	bafta_cs = [i[1] for i in categories]
-	bafta_aw = [i[1] for i in awards]
-	sag_cs = [i[2] for i in categories]
-	sag_aw = [i[2] for i in awards]
-	dg_cs = [i[3] for i in categories]
-	dg_aw = [i[3] for i in awards]
-	pg_cs = [i[4] for i in categories]
-	pg_aw = [i[4] for i in awards]
-	adg_cs = [i[5] for i in categories]
-	adg_aw = [i[5] for i in awards]
-	wg_cs = [i[6] for i in categories]
-	wg_aw = [i[6] for i in awards]
-	cdg_cs = [i[7] for i in categories]
-	cdg_aw = [i[7] for i in awards]
-	ofta_cs = [i[8] for i in categories]
-	ofta_aw = [i[8] for i in awards]
-	ofcs_cs = [i[9] for i in categories]
-	ofcs_aw = [i[9] for i in awards]
-	cc_cs = [i[10] for i in categories]
-	cc_aw = [i[10] for i in awards]
-	lccf_cs = [i[11] for i in categories]
-	lccf_aw = [i[11] for i in awards]
-	ace_cs = [i[12] for i in categories]
-	ace_aw = [i[12] for i in awards]
-	oscar_cs = [i[13] for i in categories]
-	oscar_aw = [i[13] for i in awards]
 
-	start = df.columns.get_loc('best_picture')
-	for i, year in enumerate(categories):
-		for j, event in enumerate(year):
-			for k, award in enumerate(event):
-				for l, movie in enumerate(awards[i][j][k]):
-					if l == 0: points = 1
-					else: points = 0.5
-					movieIndex = df.index[df.movie == movie][0]
-					df.set_value(movieIndex, [df.columns[start + int(k)]], points)
 
 if __name__ == '__main__':
 	main()
