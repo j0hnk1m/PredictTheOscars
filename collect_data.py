@@ -6,7 +6,7 @@ import re
 
 def imdb_feature_film(year):
 	"""
-	Given a specific year (from 2000~2018), returns a numpy array of 250 movies and their respective IMDB IDs.
+	Given a specific year (from 2000~2018), returns a dataframe of movies, their respective IMDB IDs, and release years.
 	Example link where this function scrapes data from: https://www.imdb.com/year/2018/
 	"""
 	print(year)
@@ -23,7 +23,10 @@ def imdb_feature_film(year):
 	return df
 
 def movie_tags(id):
-	html = requests.get("https://www.imdb.com/title/" + str(id)).text
+	"""
+	Given a specific movie id (IMDB), returns a list of its tags/variables to be used as input variables.
+	"""
+	html = requests.get("https://www.imdb.com/title/" + id).text
 	# ---------------TAGS---------------
 	# certificate
 	# duration
@@ -51,28 +54,28 @@ def movie_tags(id):
 
 	if len(genre) == 0 or len(certificate) == 0 or len(rate) == 0 or len(votes) == 0 or len(user_reviews) == 0 or len(critic_reviews) == 0 or len(duration) == 0 or len(metascore) == 0:
 		return None
-	genre = ' '.join(genre[0].split())('"', '')('[ ', '')(' ]', '')
+	genre = ' '.join(genre[0].split()).replace('"', '').replace('[ ', '').replace(' ]', '')
 	certificate = certificate[0]
 	rate = float(rate[0])
-	votes = int(votes[0](',', ''))
-	user_reviews = int(user_reviews[0](',', ''))
-	critic_reviews = int(critic_reviews[0](',', ''))
-	duration = int(duration[0](',', ''))
+	votes = int(votes[0].replace(',', ''))
+	user_reviews = int(user_reviews[0].replace(',', ''))
+	critic_reviews = int(critic_reviews[0].replace(',', ''))
+	duration = int(duration[0].replace(',', ''))
 	metascore = int(metascore[0])
 
 	popularity = re.findall('titleReviewBarSubItem">\\n<span>[0-9]+<[\s\S]+ ([,0-9]+)\\n[\s\S]+\(<span class="titleOverviewSprite popularity', html)
 	if len(popularity) == 0:
 		popularity = -1
 	else:
-		popularity = int(popularity[0](',', ''))
+		popularity = int(popularity[0].replace(',', ''))
 
-	awards_wins = re.findall('<span class="awards-blurb">[\s\S]+(\d+) wins', html)
+	awards_wins = re.findall('<span class="awards-blurb">[\s\S]+ (\d+) wins', html)
 	if len(awards_wins) == 0:
 		awards_wins = 0
 	else:
 		awards_wins = int(awards_wins[0])
 
-	awards_nominations = re.findall('<span class="awards-blurb">[\s\S]+(\d+) nominations', html)
+	awards_nominations = re.findall('<span class="awards-blurb">[\s\S]+ (\d+) nominations', html)
 	if len(awards_nominations) == 0:
 		awards_nominations = 0
 	else:
@@ -82,7 +85,7 @@ def movie_tags(id):
 	if len(gross) == 0:
 		gross = -1
 	else:
-		gross = int(gross[0](',', ''))
+		gross = int(gross[0].replace(',', ''))
 
 	tags = [certificate, duration, genre, rate, metascore, keywords, votes, gross, user_reviews, critic_reviews,
 			popularity, awards_wins, awards_nominations]
