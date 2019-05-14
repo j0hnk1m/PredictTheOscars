@@ -6,6 +6,7 @@ import re
 
 def imdb_feature_film(year):
     """
+    Scrapes data of movie titles from IMDB
     :param year: any year from 2000~2018
     :return: a dataframe of movies, their respective IMDB IDs, and release years.
     """
@@ -26,6 +27,7 @@ def imdb_feature_film(year):
 
 def movie_tags(id):
     """
+    Scrapes data of movie tags/details/variables from IMDB based on the movie IDs
     :param id: movie id (IMDB)
     :return: list of its tags/variables to be used as input variables.
     """
@@ -97,8 +99,9 @@ def movie_tags(id):
 
 def scrape_movie_awards(year):
     """
-    :param year: any year from 2000~2018
-    :return: categories and award winners from all award ceremonies during that year
+    Given a year, scrapes data off of IMDB for the results of 14 different award ceremonies and the categories invovled.
+    :param year: integer year from 2000~2018
+    :return: 13 ceremonies' award categories, 13 ceremonies' award results, Oscar categories, Oscar results
     """
     events = ['ev0000292', 'ev0000123', 'ev0000598', 'ev0000212', 'ev0000531', 'ev0000618', 'ev0000710',
               'ev0000190', 'ev0002704', 'ev0000511', 'ev0000133', 'ev0000403', 'ev0000017', 'ev0000003']
@@ -261,10 +264,12 @@ def scrape_movie_awards(year):
 
 def id_categories(name, cs, aw):
     """
+    This function is specifically called by scrape_movie_awards to link similar categories across award ceremonies by
+    tagging them with IDs.
     :param name: award ceremony id/name
     :param cs: list of categories
     :param aw: list of award winners/nominees
-    :return: list of categories ids (0~23) that are available and list of award winners based on the available categories
+    :return: list of categories ids (0~23) and list of award winners based on the available categories
     """
     if name == 'gg':
         replace = [next((s for s in cs if 'Best Motion Picture' in s and 'Drama' in s), None),

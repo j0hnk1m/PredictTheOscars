@@ -3,15 +3,20 @@ import numpy as np
 import collect_data
 import os
 import pickle
+
 from sklearn.model_selection import train_test_split
 from sklearn import svm
-
 from keras.models import Sequential
 from keras.layers import Dense
 np.random.seed(1)
 
 
 def extract_movie_data():
+	"""
+	Extracts the movie titles from years 2000~2018 and their respective tags/details and outputs them in the form of
+	a dataframe in similar format to the BIGML dataset.
+	:return: dataframe of web-scraped movies and their tags
+	"""
 	if os.path.exists('./data/imdb.csv'):
 		imdb = pd.read_csv('./data/imdb.csv', index_col=0)
 	else:
@@ -44,17 +49,29 @@ def extract_movie_data():
 	return imdb
 
 
-def build_model(type):
-	if type == 'svm':
-		model = svm.SVC(kernel='linear')
-	elif type == 'mlp':
-		model = Sequential()
-		model.add(Dense(12, input_dim=8, activation='relu'))
-		model.add(Dense(8, activation='relu'))
-		model.add(Dense(1, activation='sigmoid'))
+def combine_datasets():
+	"""
+	Combines the BIGML dataset and our IMDB-scraped dataset. Also fills the NaN values in the gross and popularity
+	columns with -1 for better model training and sorts the data based on year and movie.
+	:return: combined dataset
+	"""
+	bigml = pd.read_csv('./data/bigml.csv', index_col=0)
+	bigml = bigml.fillna(value={'gross': -1, 'popularity': -1})
+	imdb = extract_movie_data()
+	dataframe = bigml.append(imdb, sort=False, ignore_index=True)
+	dataframe.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
+	dataframe = dataframe.reset_index(drop=True)
+
+	return dataframe
 
 
 def add_award_points(dataframe):
+	"""
+	Adds points to movies in categories that it won / was nominated in from all 14 award ceremonies. 1 point for winner,
+	1/(number of nominees) points for nominee, and 0 points for neither.
+	:param dataframe: final (combined) dataset
+	:return: edited dataset with points added in
+	"""
 	if os.path.exists('./data/categories') and os.path.exists('./data/awards') and os.path.exists('./data/oscar_cs') and os.path.exists('./data/oscar_aw'):
 		with open('./data/categories', 'rb') as f:
 			categories = pickle.load(f)
@@ -101,7 +118,7 @@ def add_award_points(dataframe):
 						print(str(i) + ", " + str(j) + ", " + str(k) + ", " + str(l))
 						print(movie + '\n')
 						if l == 0: points = 1
-						else: points = 0.5
+						else: points = 1.0/len(awards[i][j][k])
 						dataframe.loc[index[0], dataframe.columns[start + int(award)]] += points
 
 	# Oscar points for data labels
@@ -115,7 +132,7 @@ def add_award_points(dataframe):
 					print(movie)
 					print(str(dataframe.loc[index[0], dataframe.columns[oscar_start + int(award)]]))
 					if l == 0: points = 1
-					else: points = 0.5
+					else: points = 1.0/len(oscar_aw[i][j])
 					dataframe.loc[index[0], dataframe.columns[oscar_start + int(award)]] = points
 					print(str(dataframe.loc[index[0], dataframe.columns[oscar_start + int(award)]]) + '\n')
 
@@ -124,20 +141,66 @@ def add_award_points(dataframe):
 	for i, col in enumerate(dataframe.columns[16:oscar_start]):
 		dataframe[col] /= N[i]
 
+	dataframe.to_csv('./data/combined.csv')
 	return dataframe
 
 
-def main():
-	# bigml = pd.read_csv('./data/bigml.csv', index_col=0)
-	# bigml = bigml.fillna(value={'gross': -1, 'popularity': -1})
-	# imdb = extract_movie_data()
-	# df = bigml.append(imdb, sort=False, ignore_index=True)
-	# df.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
-	# df = df.reset_index(drop=True)
+def split_genres(dataframe):
+	"""
+	Extracts the genre column from the final (combined) dataset, splits it into lists, and converts them into IDs
+	based on genreID below.
+	:param dataframe: the final dataframe
+	:return: an edited dataframe with split genres
+	"""
+	# ID dictionary of all the genres
+	genreID = {'Action': 0, 'Adult': 1, 'Adventure': 2, 'Animation': 3, 'Biography': 4, 'Comedy': 5, 'Crime': 6,
+			   'Documentary': 7, 'Drama': 8, 'Family': 9, 'Fantasy': 10, 'Film': 11, 'Noir': 12, 'Game - Show': 13,
+			   'History': 14, 'Horror': 15, 'Musical': 16, 'Music': 17, 'Mystery': 18, 'News': 19, 'Reality - TV': 20,
+			   'Romance': 21, 'SciFi': 22, 'Short': 23, 'Sport': 24, 'Talk - Show': 25, 'Thriller': 26, 'War': 27,
+			   'Western': 28}
 
+	# Splits the first 3 genres of each movie into 3 different lists. If a movie only has 1 or 2 genre(s), then the empty spot is filled with -1
+	genre = [i.replace('|', ', ') for i in list(dataframe.genre)]
+	genre1 = []
+	genre2 = []
+	genre3 = []
+	for i in genre:
+		multipleGenres = [g.replace(',', '').replace('Sci-Fi', 'SciFi') for g in i.split()]
+
+		if len(multipleGenres) <= 3:
+			multipleGenres += [-1] * (3 - len(multipleGenres))
+		genre1.append(multipleGenres[0])
+		genre2.append(multipleGenres[1])
+		genre3.append(multipleGenres[2])
+
+	# Replaces the genres with IDs from genreID
+	genre1 = [str(genreID.get(word, word)) for word in genre1]
+	genre2 = [str(genreID.get(word, word)) for word in genre2]
+	genre3 = [str(genreID.get(word, word)) for word in genre3]
+
+	# Deletes the original genre column and inserts the 3 new genre columns
+	dataframe.drop('genre', axis=1, inplace=True)
+	dataframe.insert(5, 'genre1', genre1, True)
+	dataframe.insert(6, 'genre2', genre2, True)
+	dataframe.insert(7, 'genre3', genre3, True)
+	return dataframe
+
+
+def build_model(type):
+	if type == 'svm':
+		model = svm.SVC(kernel='linear')
+	elif type == 'mlp':
+		model = Sequential()
+		model.add(Dense(12, input_dim=8, activation='relu'))
+		model.add(Dense(8, activation='relu'))
+		model.add(Dense(1, activation='sigmoid'))
+
+
+def main():
+	# df = combine_datasets()
 	df = pd.read_csv('./data/combined.csv', index_col=0)
-	df = add_award_points(df)
-	df.to_csv('./data/combined.csv')
+	# df = add_award_points(df)
+	# df = split_genres(df)
 
 
 if __name__ == '__main__':
