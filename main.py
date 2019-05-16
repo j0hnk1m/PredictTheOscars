@@ -77,30 +77,30 @@ def add_award_points(dataframe):
 			categories = pickle.load(f)
 		with open('./data/awards', 'rb') as f:
 			awards = pickle.load(f)
-		with open('./data/oscar_cs', 'rb') as f:
-			oscar_cs = pickle.load(f)
-		with open('./data/oscar_aw', 'rb') as f:
-			oscar_aw = pickle.load(f)
+		with open('./data/oscarCategories', 'rb') as f:
+			oscarCategories = pickle.load(f)
+		with open('./data/oscarAwards', 'rb') as f:
+			oscarAwards = pickle.load(f)
 	else:
 		categories = []
 		awards = []
-		oscar_cs = []
-		oscar_aw = []
+		oscarCategories = []
+		oscarAwards = []
 		for y in range(2000, 2019):
 			print(y)
 			results = collect_data.scrape_movie_awards(y)
 			categories.append(results[0])
 			awards.append(results[1])
-			oscar_cs.append(results[2])
-			oscar_aw.append(results[3])
+			oscarCategories.append(results[2])
+			oscarAwards.append(results[3])
 		with open('./data/categories', 'wb') as f:
 			pickle.dump(categories, f)
 		with open('./data/awards', 'wb') as f:
 			pickle.dump(awards, f)
-		with open('./data/oscar_cs', 'wb') as f:
-			pickle.dump(oscar_cs, f)
-		with open('./data/oscar_aw', 'wb') as f:
-			pickle.dump(oscar_aw, f)
+		with open('./data/oscarCategories', 'wb') as f:
+			pickle.dump(oscarCategories, f)
+		with open('./data/oscarAwards', 'wb') as f:
+			pickle.dump(oscarAwards, f)
 
 	# Adds points to all of the movies that have won/been nominated for awards in all categories (except Oscar)
 	start = dataframe.columns.get_loc('best_picture')
@@ -122,35 +122,35 @@ def add_award_points(dataframe):
 						dataframe.loc[index[0], dataframe.columns[start + int(award)]] += points
 
 	# Oscar points for data labels
-	oscar_start = dataframe.columns.get_loc('oscar_best_picture')
-	for i, year in enumerate(oscar_cs):
+	oscarStart = dataframe.columns.get_loc('oscar_best_picture')
+	for i, year in enumerate(oscarCategories):
 		for j, award in enumerate(year):
-			for l, movie in enumerate(oscar_aw[i][j]):
+			for l, movie in enumerate(oscarAwards[i][j]):
 				index = dataframe.index[(dataframe.movie == movie)&((dataframe.year == 2000 + i)|(dataframe.year == 2000 + i + 1)|(dataframe.year == 2000 + i - 1))]
 				if len(index) != 0:
 					print(str(i) + ", " + str(j) + ", " + str(l))
 					print(movie)
-					print(str(dataframe.loc[index[0], dataframe.columns[oscar_start + int(award)]]))
+					print(str(dataframe.loc[index[0], dataframe.columns[oscarStart + int(award)]]))
 					if l == 0: points = 1
-					else: points = 1.0/len(oscar_aw[i][j])
-					dataframe.loc[index[0], dataframe.columns[oscar_start + int(award)]] = points
-					print(str(dataframe.loc[index[0], dataframe.columns[oscar_start + int(award)]]) + '\n')
+					else: points = 1.0/len(oscarAwards[i][j])
+					dataframe.loc[index[0], dataframe.columns[oscarStart + int(award)]] = points
+					print(str(dataframe.loc[index[0], dataframe.columns[oscarStart + int(award)]]) + '\n')
 
 	# Computes average sum by dividing the award points by the number of award ceremonies the movie could have won in
 	N = [11, 7, 7, 7, 7, 8, 4, 4, 5, 8, 1, 4, 6, 3, 4, 4, 3, 1, 1, 3, 1, 4, 6, 5]
-	for i, col in enumerate(dataframe.columns[16:oscar_start]):
+	for i, col in enumerate(dataframe.columns[16:oscarStart]):
 		dataframe[col] /= N[i]
 
 	dataframe.to_csv('./data/combined.csv')
 	return dataframe
 
 
-def split_genres(dataframe):
+def id_genre(dataframe):
 	"""
 	Extracts the genre column from the final (combined) dataset, splits it into lists, and converts them into IDs
 	based on genreID below.
 	:param dataframe: the final dataframe
-	:return: an edited dataframe with split genres
+	:return: an edited dataframe with genre IDs
 	"""
 	# ID dictionary of all the genres
 	genreID = {'Action': 0, 'Adult': 1, 'Adventure': 2, 'Animation': 3, 'Biography': 4, 'Comedy': 5, 'Crime': 6,
@@ -186,22 +186,52 @@ def split_genres(dataframe):
 	return dataframe
 
 
+def id_certificate(dataframe):
+	"""
+	Extracts the certificate column from the final (combined) dataset and converts them into IDs
+	based on certificateID below.
+	:param dataframe: the final dataframe
+	:return: an edited dataframe with certificate IDs
+	"""
+	# ID dictionary of all the certificates
+	certificateID = {'G': 0, 'PG': 1, 'PG-13': 2, 'R': 3, 'Not Rated': 4}
+
+	# Drops weird certificates and replaces all certificates with IDs from certificateID
+	dataframe = dataframe.drop(dataframe[~dataframe['certificate'].isin(certificateID)].index)
+	certificates = [str(certificateID.get(word, word)) for word in list(dataframe['certificate'])]
+
+	# Replaces the certificates column with new ID certificates column
+	dataframe['certificate'] = certificates
+	return dataframe
+
+
 def build_model(type):
 	if type == 'svm':
-		model = svm.SVC(kernel='linear')
-	elif type == 'mlp':
-		model = Sequential()
-		model.add(Dense(12, input_dim=8, activation='relu'))
-		model.add(Dense(8, activation='relu'))
-		model.add(Dense(1, activation='sigmoid'))
+		m = svm.SVC(kernel='linear')
 
+	elif type == 'mlp':
+		m = Sequential()
+		m.add(Dense(12, input_dim=8, activation='relu'))
+		m.add(Dense(8, activation='relu'))
+		m.add(Dense(1, activation='sigmoid'))
+
+	return m
 
 def main():
 	# df = combine_datasets()
 	df = pd.read_csv('./data/combined.csv', index_col=0)
 	# df = add_award_points(df)
-	# df = split_genres(df)
+	# df = id_genre(df)
+	# df = id_certificate(df)
 
+
+	df = df.drop(['movie', 'movie_id', 'synopsis'], axis=1)
+	oscarStart = df.columns.get_loc('oscar_best_picture')
+	x = df[df.columns[:oscarStart]]
+	y = df[df.columns[oscarStart:]]
+	xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
+
+	model = build_model('svm')
 
 if __name__ == '__main__':
 	main()
