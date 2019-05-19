@@ -138,7 +138,7 @@ def add_award_points(dataframe):
 
 	# Computes average sum by dividing the award points by the number of award ceremonies the movie could have won in
 	N = [11, 7, 7, 7, 7, 8, 4, 4, 5, 8, 1, 4, 6, 3, 4, 4, 3, 1, 1, 3, 1, 4, 6, 5]
-	for i, col in enumerate(dataframe.columns[16:oscarStart]):
+	for i, col in enumerate(dataframe.columns[start:oscarStart]):
 		dataframe[col] /= N[i]
 
 	dataframe.to_csv('./data/combined.csv')
@@ -183,6 +183,8 @@ def id_genre(dataframe):
 	dataframe.insert(5, 'genre1', genre1, True)
 	dataframe.insert(6, 'genre2', genre2, True)
 	dataframe.insert(7, 'genre3', genre3, True)
+
+	dataframe['genre3'] = dataframe['genre3'].apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(-1)
 	return dataframe
 
 
@@ -205,33 +207,50 @@ def id_certificate(dataframe):
 	return dataframe
 
 
-def build_model(type):
-	if type == 'svm':
-		m = svm.SVC(kernel='linear')
+def run_svm(xtrain, xval, ytrain, yval):
+	m = svm.SVC(kernel='linear')
+	m.fit(xtrain, ytrain)
 
-	elif type == 'mlp':
-		m = Sequential()
-		m.add(Dense(12, input_dim=8, activation='relu'))
-		m.add(Dense(8, activation='relu'))
-		m.add(Dense(1, activation='sigmoid'))
+	predictionTrain = [int(a) for a in m.predict(xtrain)]
+	predictionTest = [int(a) for a in m.predict(xval)]
+	ncorrectTrain = sum(int(a == y) for a, y in zip(predictionTrain, ytrain))
+	ncorrectTest = sum(int(a == y) for a, y in zip(predictionTest, yval))
 
-	return m
+	rateTrain = float(ncorrectTrain) / float(len(ytrain))
+	rateTest = float(ncorrectTest) / float(len(yval))
+
+	return (rateTrain, rateTest, predictionTrain, predictionTest)
+
 
 def main():
 	# df = combine_datasets()
 	df = pd.read_csv('./data/combined.csv', index_col=0)
+	# df.fillna(-1, inplace=True)
 	# df = add_award_points(df)
 	# df = id_genre(df)
 	# df = id_certificate(df)
 
-
 	df = df.drop(['movie', 'movie_id', 'synopsis'], axis=1)
 	oscarStart = df.columns.get_loc('oscar_best_picture')
-	x = df[df.columns[:oscarStart]]
-	y = df[df.columns[oscarStart:]]
-	xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
+	model = 'svm'
 
-	model = build_model('svm')
+	if model == 'svm':
+		x = np.array(df[df.columns[:oscarStart]].values, dtype=float)
+
+		# Because SVM cannot handle multiple outputs, split into 24 SVM models for each category
+		for category in df.columns[oscarStart:]:
+			print(category)
+			y = np.array(df[category], dtype=int)
+			y[(y > 0) & (y < 1)] = 1
+			y[y == 1] = 2
+			xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
+
+			xtrain=xTrain; ytrain=yTrain; xval=xVal; yval=yVal
+
+			svmResults = run_svm(xTrain, xVal, yTrain, yVal)
+	elif model == 'neuralnetwork':
+		print('hi')
+
 
 if __name__ == '__main__':
 	main()
