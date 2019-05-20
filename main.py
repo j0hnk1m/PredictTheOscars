@@ -10,7 +10,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 from sklearn.metrics import accuracy_score
 from keras.models import Sequential
-from keras.layers import Dense
+from keras.layers import Dense, Activation, Dropout
 np.random.seed(1)
 
 
@@ -223,8 +223,8 @@ def main():
 	modelType = 'decisiontree'
 
 	# Prepares the data
-	x = np.array(df[df.columns[:oscarStart]].values)
-	y = np.array(df[df.columns[oscarStart:]])
+	x = df.iloc[:, :oscarStart].values
+	y = df.iloc[:, oscarStart:].values
 	y[y == 1] = 2
 	y[(y > 0) & (y < 1)] = 1
 	y = y.astype(int)
@@ -279,7 +279,14 @@ def main():
 
 	elif modelType == 'neuralnetwork':
 		model = Sequential()
-
+		model.add(Dense(128, input_dim=39))
+		model.add(Activation('relu'))
+		model.add(Dropout(0.2))
+		model.add(Dense(24))
+		model.add(Activation('sigmoid'))
+		model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+		model.summary()
+		model.fit(xTrain, yTrain, epochs=10, batch_size=32)
 
 if __name__ == '__main__':
 	main()
