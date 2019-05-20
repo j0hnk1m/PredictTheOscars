@@ -4,6 +4,7 @@ import collect_data
 import os
 import pickle
 
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -59,7 +60,6 @@ def combine_datasets():
 	:return: combined dataset
 	"""
 	bigml = pd.read_csv('./data/bigml.csv', index_col=0)
-	bigml = bigml.fillna(value={'gross': -1, 'popularity': -1})
 	imdb = extract_movie_data()
 	dataframe = bigml.append(imdb, sort=False, ignore_index=True)
 	dataframe.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
@@ -222,13 +222,31 @@ def main():
 	oscarStart = df.columns.get_loc('oscar_best_picture')
 	modelType = 'decisiontree'
 
-	# Prepares the data
+	# Data preprocessing
 	x = df.iloc[:, :oscarStart].values
 	y = df.iloc[:, oscarStart:].values
 	y[y == 1] = 2
 	y[(y > 0) & (y < 1)] = 1
 	y = y.astype(int)
-	xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
+
+	# Label encoding
+	labelencoder_certificate = LabelEncoder()
+	x[:, df.columns.get_loc('certificate')] = labelencoder_certificate.fit_transform(x[:, df.columns.get_loc('certificate')])
+	labelencoder_genre = LabelEncoder()
+	x[:, df.columns.get_loc('genre')] = labelencoder_genre.fit_transform(x[:, df.columns.get_loc('genre')])
+
+	# Dummy variables
+	onehotencoder = OneHotEncoder(categorical_features=[1])
+	x = onehotencoder.fit_transform(x).toarray()
+	x = x[:, 1:]
+
+	# Splits data into training and testing sets
+	xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size=0.2, random_state=21)
+
+	# Scales inputs to avoid one variable having more weight than another
+	sc = StandardScaler()
+	X_train = sc.fit_transform(xTrain)
+	X_test = sc.transform(xTest)
 
 	if modelType == 'svm':
 		# Because SVM cannot handle multiple outputs, split into 24 SVM models for each category
@@ -238,7 +256,7 @@ def main():
 			y[y == 1] = 2
 			y[(y > 0) & (y < 1)] = 1
 			y = y.astype(int)
-			xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
+			xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size=0.2, random_state=21)
 
 			model = svm.SVC(decision_function_shape='ovo')
 			model.fit(xTrain, yTrain)
@@ -246,9 +264,9 @@ def main():
 	elif modelType == 'decisiontree':
 		model = DecisionTreeClassifier(random_state=21)
 		model.fit(xTrain, yTrain)
-		yPred = model.predict(xVal)
+		yPred = model.predict(xTest)
 		p = np.where(yPred == 2)
-		v = np.where(yVal == 2)
+		v = np.where(yTest == 2)
 
 		# x = np.array(df[df.columns[:oscarStart]].values)
 		# y = np.array(df[df.columns[oscarStart:]])
@@ -263,9 +281,9 @@ def main():
 	elif modelType == 'randomforest':
 		model = RandomForestClassifier(random_state=21)
 		model.fit(xTrain, yTrain)
-		yPred = model.predict(xVal)
+		yPred = model.predict(xTest)
 		p = np.where(yPred==2)
-		v = np.where(yVal==2)
+		v = np.where(yTest==2)
 
 		# x = np.array(df[df.columns[:oscarStart]].values)
 		# y = np.array(df[df.columns[oscarStart:]])
