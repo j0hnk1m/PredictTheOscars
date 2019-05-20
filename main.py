@@ -5,7 +5,10 @@ import os
 import pickle
 
 from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
+from sklearn.metrics import accuracy_score
 from keras.models import Sequential
 from keras.layers import Dense
 np.random.seed(1)
@@ -207,21 +210,6 @@ def id_certificate(dataframe):
 	return dataframe
 
 
-def run_svm(xtrain, xval, ytrain, yval):
-	m = svm.SVC(kernel='linear')
-	m.fit(xtrain, ytrain)
-
-	predictionTrain = [int(a) for a in m.predict(xtrain)]
-	predictionTest = [int(a) for a in m.predict(xval)]
-	ncorrectTrain = sum(int(a == y) for a, y in zip(predictionTrain, ytrain))
-	ncorrectTest = sum(int(a == y) for a, y in zip(predictionTest, yval))
-
-	rateTrain = float(ncorrectTrain) / float(len(ytrain))
-	rateTest = float(ncorrectTest) / float(len(yval))
-
-	return (rateTrain, rateTest, predictionTrain, predictionTest)
-
-
 def main():
 	# df = combine_datasets()
 	df = pd.read_csv('./data/combined.csv', index_col=0)
@@ -232,24 +220,65 @@ def main():
 
 	df = df.drop(['movie', 'movie_id', 'synopsis'], axis=1)
 	oscarStart = df.columns.get_loc('oscar_best_picture')
-	model = 'svm'
+	modelType = 'decisiontree'
 
-	if model == 'svm':
-		x = np.array(df[df.columns[:oscarStart]].values, dtype=float)
+	# Prepares the data
+	x = np.array(df[df.columns[:oscarStart]].values)
+	y = np.array(df[df.columns[oscarStart:]])
+	y[y == 1] = 2
+	y[(y > 0) & (y < 1)] = 1
+	y = y.astype(int)
+	xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
 
+	if modelType == 'svm':
 		# Because SVM cannot handle multiple outputs, split into 24 SVM models for each category
 		for category in df.columns[oscarStart:]:
 			print(category)
-			y = np.array(df[category], dtype=int)
-			y[(y > 0) & (y < 1)] = 1
+			y = np.array(df[category])
 			y[y == 1] = 2
+			y[(y > 0) & (y < 1)] = 1
+			y = y.astype(int)
 			xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
 
-			xtrain=xTrain; ytrain=yTrain; xval=xVal; yval=yVal
+			model = svm.SVC(decision_function_shape='ovo')
+			model.fit(xTrain, yTrain)
 
-			svmResults = run_svm(xTrain, xVal, yTrain, yVal)
-	elif model == 'neuralnetwork':
-		print('hi')
+	elif modelType == 'decisiontree':
+		model = DecisionTreeClassifier(random_state=21)
+		model.fit(xTrain, yTrain)
+		yPred = model.predict(xVal)
+		p = np.where(yPred == 2)
+		v = np.where(yVal == 2)
+
+		# x = np.array(df[df.columns[:oscarStart]].values)
+		# y = np.array(df[df.columns[oscarStart:]])
+		# y[y == 1] = 2
+		# y[(y > 0) & (y < 1)] = 1
+		# y = y.astype(int)
+		# xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
+		# model = DecisionTreeClassifier(random_state=21)
+		# model.fit(xTrain, yTrain)
+		# model.score(xVal, yVal)
+
+	elif modelType == 'randomforest':
+		model = RandomForestClassifier(random_state=21)
+		model.fit(xTrain, yTrain)
+		yPred = model.predict(xVal)
+		p = np.where(yPred==2)
+		v = np.where(yVal==2)
+
+		# x = np.array(df[df.columns[:oscarStart]].values)
+		# y = np.array(df[df.columns[oscarStart:]])
+		# y[y == 1] = 2
+		# y[(y > 0) & (y < 1)] = 1
+		# y = y.astype(int)
+		# xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
+		# model = DecisionTreeClassifier(random_state=21)
+		# model.fit(xTrain, yTrain)
+		# model.score(xVal, yVal)
+
+	elif modelType == 'neuralnetwork':
+		model = Sequential()
 
 
 if __name__ == '__main__':
