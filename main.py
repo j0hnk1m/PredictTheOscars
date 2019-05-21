@@ -148,68 +148,6 @@ def add_award_points(dataframe):
 	return dataframe
 
 
-def id_genre(dataframe):
-	"""
-	Extracts the genre column from the final (combined) dataset, splits it into lists, and converts them into IDs
-	based on genreID below.
-	:param dataframe: the final dataframe
-	:return: an edited dataframe with genre IDs
-	"""
-	# ID dictionary of all the genres
-	genreID = {'Action': 0, 'Adult': 1, 'Adventure': 2, 'Animation': 3, 'Biography': 4, 'Comedy': 5, 'Crime': 6,
-			   'Documentary': 7, 'Drama': 8, 'Family': 9, 'Fantasy': 10, 'Film': 11, 'Noir': 12, 'Game - Show': 13,
-			   'History': 14, 'Horror': 15, 'Musical': 16, 'Music': 17, 'Mystery': 18, 'News': 19, 'Reality - TV': 20,
-			   'Romance': 21, 'SciFi': 22, 'Short': 23, 'Sport': 24, 'Talk - Show': 25, 'Thriller': 26, 'War': 27,
-			   'Western': 28}
-
-	# Splits the first 3 genres of each movie into 3 different lists. If a movie only has 1 or 2 genre(s), then the empty spot is filled with -1
-	genre = [i.replace('|', ', ') for i in list(dataframe.genre)]
-	genre1 = []
-	genre2 = []
-	genre3 = []
-	for i in genre:
-		multipleGenres = [g.replace(',', '').replace('Sci-Fi', 'SciFi') for g in i.split()]
-
-		if len(multipleGenres) <= 3:
-			multipleGenres += [-1] * (3 - len(multipleGenres))
-		genre1.append(multipleGenres[0])
-		genre2.append(multipleGenres[1])
-		genre3.append(multipleGenres[2])
-
-	# Replaces the genres with IDs from genreID
-	genre1 = [str(genreID.get(word, word)) for word in genre1]
-	genre2 = [str(genreID.get(word, word)) for word in genre2]
-	genre3 = [str(genreID.get(word, word)) for word in genre3]
-
-	# Deletes the original genre column and inserts the 3 new genre columns
-	dataframe.drop('genre', axis=1, inplace=True)
-	dataframe.insert(5, 'genre1', genre1, True)
-	dataframe.insert(6, 'genre2', genre2, True)
-	dataframe.insert(7, 'genre3', genre3, True)
-
-	dataframe['genre3'] = dataframe['genre3'].apply(lambda x: pd.to_numeric(x, errors='coerce')).fillna(-1)
-	return dataframe
-
-
-def id_certificate(dataframe):
-	"""
-	Extracts the certificate column from the final (combined) dataset and converts them into IDs
-	based on certificateID below.
-	:param dataframe: the final dataframe
-	:return: an edited dataframe with certificate IDs
-	"""
-	# ID dictionary of all the certificates
-	certificateID = {'G': 0, 'PG': 1, 'PG-13': 2, 'R': 3, 'Not Rated': 4}
-
-	# Drops weird certificates and replaces all certificates with IDs from certificateID
-	dataframe = dataframe.drop(dataframe[~dataframe['certificate'].isin(certificateID)].index)
-	certificates = [str(certificateID.get(word, word)) for word in list(dataframe['certificate'])]
-
-	# Replaces the certificates column with new ID certificates column
-	dataframe['certificate'] = certificates
-	return dataframe
-
-
 def main():
 	# df = combine_datasets()
 	df = pd.read_csv('./data/combined.csv', index_col=0)
@@ -220,7 +158,7 @@ def main():
 
 	df = df.drop(['movie', 'movie_id', 'synopsis'], axis=1)
 	oscarStart = df.columns.get_loc('oscar_best_picture')
-	modelType = 'decisiontree'
+	modelType = 'neuralnetwork'
 
 	# Data preprocessing
 	x = df.iloc[:, :oscarStart].values
@@ -230,6 +168,7 @@ def main():
 	y = y.astype(int)
 
 	# Label encoding
+	df = df.drop(df[~df['certificate'].isin(['G', 'PG', 'PG-13', 'R', 'Not Rated'])].index)
 	labelencoder_certificate = LabelEncoder()
 	x[:, df.columns.get_loc('certificate')] = labelencoder_certificate.fit_transform(x[:, df.columns.get_loc('certificate')])
 	labelencoder_genre = LabelEncoder()
@@ -245,8 +184,8 @@ def main():
 
 	# Scales inputs to avoid one variable having more weight than another
 	sc = StandardScaler()
-	X_train = sc.fit_transform(xTrain)
-	X_test = sc.transform(xTest)
+	xTrain = sc.fit_transform(xTrain)
+	xTest = sc.transform(xTest)
 
 	if modelType == 'svm':
 		# Because SVM cannot handle multiple outputs, split into 24 SVM models for each category
@@ -305,6 +244,7 @@ def main():
 		model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
 		model.summary()
 		model.fit(xTrain, yTrain, epochs=10, batch_size=32)
+
 
 if __name__ == '__main__':
 	main()

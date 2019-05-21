@@ -16,7 +16,7 @@ def imdb_feature_film(year):
     html = requests.get("https://www.imdb.com/year/" + str(year)).text
 
     movies = np.zeros((0, 2))
-    for i in range(0, 7):  # 7 pages of 50 movies each = 500 top movies
+    for i in range(0, 3):  # 3 pages of 50 movies each = 150 top movies
         movies = np.concatenate([movies, np.flip(np.array(re.findall(r'<a href="/title/([^:?%]+?)/"[\r\n]+> <img alt="([^%]+?)"[\r\n]+', html)))])
         nextLink = "https://www.imdb.com" + re.findall(r'<a href="(/search/title\?title_type=feature&year=(?:.*)&start=(?:.*))"[\r\n]+class="lister-page-next next-page"', html)[0]
         html = requests.get(nextLink).text
