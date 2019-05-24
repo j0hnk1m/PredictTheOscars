@@ -69,6 +69,7 @@ def combine_datasets():
 	dataframe = bigml.append(imdb, sort=False, ignore_index=True)
 	dataframe.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
 	dataframe = dataframe.reset_index(drop=True)
+	dataframe.to_csv('./data/combined.csv')
 
 	return dataframe
 
@@ -110,10 +111,7 @@ def add_award_points(dataframe):
 		with open('./data/oscarAwards', 'wb') as f:
 			pickle.dump(oscarAwards, f)
 
-	categoryNames = ['best_picture', 'actor', 'actress', 'supporting_actor', 'supporting_actress', 'animated',
-					 'cinematography', 'costume_design', 'directing', 'documentary', 'documentary_short', 'film_editing',
-					 'foreign_language', 'makeup', 'original_score', 'original_song', 'production_design', 'short_animated',
-					 'short_live', 'sound_editing', 'sound_mixing', 'visual_effects', 'writing_adapted', 'writing_original']
+	categoryNames = ['best_picture', 'actor', 'actress', 'supporting_actor', 'supporting_actress', 'animated']
 	for category in categoryNames:
 		dataframe[category] = np.nan
 	for category in categoryNames:
@@ -154,7 +152,7 @@ def add_award_points(dataframe):
 					print(str(dataframe.loc[index[0], dataframe.columns[oscarStart + int(award)]]) + '\n')
 
 	# Computes average sum by dividing the award points by the number of award ceremonies the movie could have won in
-	N = [11, 7, 7, 7, 7, 8, 4, 4, 5, 8, 1, 4, 6, 3, 4, 4, 3, 1, 1, 3, 1, 4, 6, 5]
+	N = [10, 7, 7, 7, 7, 8]
 	for i, col in enumerate(dataframe.columns[start:oscarStart]):
 		dataframe[col] /= N[i]
 
@@ -194,40 +192,41 @@ def main():
 	y[y == 1] = 2
 	y[(y > 0) & (y < 1)] = 1
 	y = y.astype(int)
-	xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size=0.2, random_state=21)
+	xTrain, xTest = x[:df.index[df['year'] == 2018]], x[df.index[df['year'] == 2018]:]
+	yTrain, yTest = y[:df.index[df['year'] == 2018]], y[df.index[df['year'] == 2018]:]
 
 	# Scales inputs to avoid one variable having more weight than another
 	sc = StandardScaler()
 	xTrain = sc.fit_transform(xTrain)
 	xTest = sc.transform(xTest)
 
-	if modelType == 'svm':
-		y = df.iloc[:, oscarStart:].values
-		y[y > 0] = 1
-		y = y.astype(int)
-
-		model = svm.LinearSVC(multi_class='crammer_singer')
-		model.fit(xTrain, yTrain)
-
-	elif modelType == 'randomforest':
-		model = RandomForestClassifier(random_state=21)
-		model.fit(xTrain, yTrain)
-		yPred = model.predict(xTest)
-		p = np.where(yPred==2)
-		v = np.where(yTest==2)
-
-	elif modelType == 'neuralnetwork':
-		model = Sequential()
-		model.add(Dense(128, input_dim=xTrain.shape[1]))
-		model.add(Activation('relu'))
-		model.add(Dropout(0.2))
-		model.add(Dense(24))
-		model.add(Activation('sigmoid'))
-		model.compile(optimizer=Adam(lr=0.0001), loss=[focal_loss], metrics=['mse'])
-		model.summary()
-		model.fit(xTrain, yTrain, epochs=128, batch_size=16)
-
-		model.predict(xTest)
+	# if modelType == 'svm':
+	# 	y = df.iloc[:, oscarStart:].values
+	# 	y[y > 0] = 1
+	# 	y = y.astype(int)
+	#
+	# 	model = svm.LinearSVC(multi_class='crammer_singer')
+	# 	model.fit(xTrain, yTrain)
+	#
+	# elif modelType == 'randomforest':
+	# 	model = RandomForestClassifier(random_state=21)
+	# 	model.fit(xTrain, yTrain)
+	# 	yPred = model.predict(xTest)
+	# 	p = np.where(yPred==2)
+	# 	v = np.where(yTest==2)
+	#
+	# elif modelType == 'neuralnetwork':
+	# 	model = Sequential()
+	# 	model.add(Dense(128, input_dim=xTrain.shape[1]))
+	# 	model.add(Activation('relu'))
+	# 	model.add(Dropout(0.2))
+	# 	model.add(Dense(24))
+	# 	model.add(Activation('sigmoid'))
+	# 	model.compile(optimizer=Adam(lr=0.0001), loss=[focal_loss], metrics=['mse'])
+	# 	model.summary()
+	# 	model.fit(xTrain, yTrain, epochs=128, batch_size=16)
+	#
+	# 	model.predict(xTest)
 
 
 if __name__ == '__main__':

@@ -16,7 +16,7 @@ def imdb_feature_film(year):
     html = requests.get("https://www.imdb.com/year/" + str(year)).text
 
     movies = np.zeros((0, 2))
-    for i in range(0, 7):  # _ pages of 50 movies each
+    for i in range(0, 5):  # _ pages of 50 movies each
         movies = np.concatenate([movies, np.flip(np.array(re.findall(r'<a href="/title/([^:?%]+?)/"[\r\n]+> <img alt="([^%]+?)"[\r\n]+', html)))])
         nextLink = "https://www.imdb.com" + re.findall(r'<a href="(/search/title\?title_type=feature&year=(?:.*)&start=(?:.*))"[\r\n]+class="lister-page-next next-page"', html)[0]
         html = requests.get(nextLink).text
@@ -101,7 +101,7 @@ def scrape_movie_awards(year):
     """
     Given a year, scrapes data off of IMDB for the results of 14 different award ceremonies and the categories invovled.
     :param year: integer year from 2000~2018
-    :return: 13 ceremonies' award categories, 13 ceremonies' award results, Oscar categories, Oscar results
+    :return: 12 ceremonies' award categories, 12 ceremonies' award results, Oscar categories, Oscar results
     """
     events = ['ev0000292', 'ev0000123', 'ev0000598', 'ev0000212', 'ev0000531', 'ev0000618', 'ev0000710',
               'ev0000190', 'ev0002704', 'ev0000511', 'ev0000133', 'ev0000403', 'ev0000017', 'ev0000003']
@@ -116,15 +116,14 @@ def scrape_movie_awards(year):
     # 4. Directors Guild
     # 5. Producers Guild
     # 6. Art Directors Guild
-    # 7. Writers Guild
-    # 8. Costume Designers Guild
-    # 9. Online Film Television Association
-    # 10. Online Film Critics Society
-    # 11. Critics Choice
-    # 12. London Critics Circle Film
-    # 13. American Cinema Editors
+    # 7. Costume Designers Guild
+    # 8. Online Film Television Association
+    # 9. Online Film Critics Society
+    # 10. Critics Choice
+    # 11. London Critics Circle Film
+    # 12. American Cinema Editors
 
-    # 14. Oscar
+    # 13. Oscar
 
     gg_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[0]) if 'Television' not in i][:14]
     gg = []
@@ -176,13 +175,6 @@ def scrape_movie_awards(year):
         else:
             adg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[5])[:-1])
     adg_categories, adg = id_categories('adg', adg_categories, adg)
-
-    wg_categories = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[6]) if 'Original Screenplay'
-                     in i or 'Adapted Screenplay' in i or i == 'Documentary Screenplay'][:3]
-    wg = []
-    for c in wg_categories:
-        wg.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[6])[:-1])
-    wg_categories, wg = id_categories('wg', wg_categories, wg)
 
     cdg_categories  = [i for i in re.findall('"categoryName":"([^"]*?)","nominations"', htmls[7]) if 'Contemporary Film' in i
                       or 'Period Film' in i or 'Fantasy Film' in i][:3]
@@ -258,8 +250,8 @@ def scrape_movie_awards(year):
                 oscar.append(re.findall(re.escape(c) + '",(?:.*?)"primaryNominees":\[{"name":"([^"]*?)","note":null', htmls[13])[:-1])
     oscar_categories, oscar = id_categories('oscar', oscar_categories, oscar)
 
-    return [gg_categories, bafta_categories, sag_categories, dg_categories, pg_categories, adg_categories, wg_categories, cdg_categories, ofta_categories, ofcs_categories, cc_categories, lccf_categories, ace_categories],\
-           [gg, bafta, sag, dg, pg, adg, wg, cdg, ofta, ofcs, cc, lccf, ace], oscar_categories, oscar
+    return [gg_categories, bafta_categories, sag_categories, dg_categories, pg_categories, adg_categories, cdg_categories, ofta_categories, ofcs_categories, cc_categories, lccf_categories, ace_categories],\
+           [gg, bafta, sag, dg, pg, adg, cdg, ofta, ofcs, cc, lccf, ace], oscar_categories, oscar
 
 
 def id_categories(name, cs, aw):
@@ -280,34 +272,16 @@ def id_categories(name, cs, aw):
                    next((s for s in cs if 'Actress' in s and 'Comedy' in s and 'Supporting' not in s), None),
                    next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
                    next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-                   next((s for s in cs if 'Animated' in s), None),
-                   next((s for s in cs if 'Director' in s), None),
-                   next((s for s in cs if 'Foreign' in s), None),
-                   next((s for s in cs if 'Original Score' in s), None),
-                   next((s for s in cs if 'Original Song' in s), None),
-                   next((s for s in cs if 'Screenplay' in s), None)]
-        id = [0, 0, 1, 1, 2, 2, 3, 4, 5, 8, 12, 14, 15, 22]
+                   next((s for s in cs if 'Animated' in s), None)]
+        id = [0, 0, 1, 1, 2, 2, 3, 4, 5]
     elif name == 'bafta':
         replace = [next((s for s in cs if 'Best Film' in s), None),
              next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None),
              next((s for s in cs if 'Actress' in s and 'Supporting' not in s), None),
              next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
              next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-             next((s for s in cs if 'Animated' in s and 'Short' not in s), None),
-             next((s for s in cs if 'Cinematography' in s), None),
-             next((s for s in cs if 'Costume Design' in s), None),
-             next((s for s in cs if 'Documentary' in s), None),
-             next((s for s in cs if 'Editing' in s), None),
-             next((s for s in cs if 'Not' in s and 'English' in s), None),
-             next((s for s in cs if 'Make Up' in s or 'Hair' in s), None),
-             next((s for s in cs if 'Production Design' in s), None),
-             next((s for s in cs if 'Short' in s and 'Animat' in s), None),
-             next((s for s in cs if 'Short' in s and 'Film' in s), None),
-             next((s for s in cs if 'Sound' in s), None),
-             next((s for s in cs if 'Visual Effects' in s), None),
-             next((s for s in cs if 'Screenplay' in s and 'Adapted' in s), None),
-             next((s for s in cs if 'Screenplay' in s and 'Original' in s), None)]
-        id = [0, 1, 2, 3, 4, 5, 6, 7, 9, 11, 12, 13, 16, 17, 18, 19, 21, 22, 23]
+             next((s for s in cs if 'Animated' in s and 'Short' not in s), None)]
+        id = [0, 1, 2, 3, 4, 5]
     elif name == 'sag':
         replace = [next((s for s in cs if 'Male' in s and 'Supporting' not in s), None),
              next((s for s in cs if 'Female' in s and 'Supporting' not in s), None),
@@ -315,25 +289,18 @@ def id_categories(name, cs, aw):
              next((s for s in cs if 'Female' in s and 'Supporting' in s), None)]
         id = [1, 2, 3, 4]
     elif name == 'dg':
-        replace = [next((s for s in cs if 'Feature' in s), None),
-             next((s for s in cs if 'Documentary' in s), None),]
-        id = [0, 9]
+        replace = [next((s for s in cs if 'Feature' in s), None)]
+        id = [0]
     elif name == 'pg':
         replace = [next((s for s in cs if 'Producer of Theatrical' in s), None),
-             next((s for s in cs if 'Animated' in s), None),
-             next((s for s in cs if 'Documentary' in s), None)]
-        id = [0, 5, 9]
+             next((s for s in cs if 'Animated' in s), None)]
+        id = [0, 5]
     elif name == 'adg':
         replace = [next((s for s in cs if 'Period' in s), None),
              next((s for s in cs if 'Fantasy' in s), None),
              next((s for s in cs if 'Contemporary' in s), None),
              next((s for s in cs if 'Animated' in s), None)]
         id = [0, 0, 0, 5]
-    elif name == 'wg':
-        replace = [next((s for s in cs if 'Documentary' in s), None),
-            next((s for s in cs if 'Adapted' in s), None),
-             next((s for s in cs if 'Original' in s), None)]
-        id = [9, 22, 23]
     elif name == 'cdg':
         replace = [next((s for s in cs if 'Period' in s), None),
              next((s for s in cs if 'Fantasy' in s), None),
@@ -347,43 +314,16 @@ def id_categories(name, cs, aw):
              next((s for s in cs if 'Breakthrough' in s and 'Female' in s), None),
              next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
              next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-             next((s for s in cs if 'Animated' in s), None),
-             next((s for s in cs if 'Cinematography' in s), None),
-             next((s for s in cs if 'Costume Design' in s), None),
-             next((s for s in cs if 'Director' in s), None),
-             next((s for s in cs if 'Documentary' in s), None),
-             next((s for s in cs if 'Film Editing' in s), None),
-             next((s for s in cs if 'Foreign' in s), None),
-             next((s for s in cs if 'Makeup' in s or 'Hair' in s), None),
-             next((s for s in cs if 'Original Score' in s), None),
-             next((s for s in cs if 'Original Song' in s), None),
-             next((s for s in cs if 'Production Design' in s), None),
-             next((s for s in cs if 'Sound' in s and 'Editing' in s), None),
-             next((s for s in cs if 'Sound' in s and 'Mixing' in s), None),
-             next((s for s in cs if 'Visual Effects' in s), None),
-             next((s for s in cs if 'Screenplay' in s and 'Another' in s), None),
-             next((s for s in cs if 'Screenplay' in s and 'Directly' in s), None)]
-        id = [0, 1, 1, 2, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23]
+             next((s for s in cs if 'Animated' in s), None)]
+        id = [0, 1, 1, 2, 2, 3, 4, 5]
     elif name == 'ofcs':
         replace = [next((s for s in cs if 'Best Picture' in s), None),
              next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None),
              next((s for s in cs if 'Actress' in s and 'Supporting' not in s), None),
              next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
              next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-             next((s for s in cs if 'Animated' in s), None),
-             next((s for s in cs if 'Cinematography' in s), None),
-             next((s for s in cs if 'Costume Design' in s), None),
-             next((s for s in cs if 'Director' in s), None),
-             next((s for s in cs if 'Documentary' in s), None),
-             next((s for s in cs if 'Editing' in s), None),
-             next((s for s in cs if 'Not' in s and 'English' in s), None),
-             next((s for s in cs if 'Original Score' in s), None),
-             next((s for s in cs if 'Original Song' in s), None),
-             next((s for s in cs if 'Sound' in s), None),
-             next((s for s in cs if 'Visual Effects' in s), None),
-             next((s for s in cs if 'Screenplay' in s and 'Adapted'), None),
-             next((s for s in cs if 'Screenplay' in s and 'Original'), None)]
-        id = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 14, 15, 19, 21, 22, 23]
+             next((s for s in cs if 'Animated' in s), None)]
+        id = [0, 1, 2, 3, 4, 5]
     elif name == 'cc':
         replace = [next((s for s in cs if 'Best Picture' in s), None),
              next((s for s in cs if 'Best Action Movie' in s), None),
@@ -395,67 +335,36 @@ def id_categories(name, cs, aw):
              next((s for s in cs if 'Actress' in s and 'Comedy' in s and 'Supporting' not in s), None),
              next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
              next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-             next((s for s in cs if 'Animated' in s), None),
-             next((s for s in cs if 'Cinematography' in s), None),
-             next((s for s in cs if 'Costume Design' in s), None),
-             next((s for s in cs if 'Director' in s), None),
-             next((s for s in cs if 'Editing' in s), None),
-             next((s for s in cs if 'Foreign' in s), None),
-             next((s for s in cs if 'Makeup' in s or 'Hair' in s), None),
-             next((s for s in cs if 'Score' in s), None),
-             next((s for s in cs if 'Song' in s), None),
-             next((s for s in cs if 'Production Design' in s), None),
-             next((s for s in cs if 'Visual Effects' in s), None),
-             next((s for s in cs if 'Adapted Screenplay' in s), None),
-             next((s for s in cs if 'Original Screenplay' in s), None)]
-        id = [0, 0, 0, 0, 1, 1, 2, 2, 3, 4, 5, 6, 7, 8, 11, 12, 13, 14, 15, 16, 21, 22, 23]
+             next((s for s in cs if 'Animated' in s), None)]
+        id = [0, 0, 0, 0, 1, 1, 2, 2, 3, 4, 5]
     elif name == 'lccf':
         replace = [next((s for s in cs if 'Film' in s), None),
              next((s for s in cs if 'Actor' in s and 'Supporting' not in s), None),
              next((s for s in cs if 'Actress' in s and 'Supporting' not in s), None),
              next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
-             next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-             next((s for s in cs if 'Director' in s), None),
-             next((s for s in cs if 'Documentary' in s), None),
-             next((s for s in cs if 'Foreign' in s), None)]
-        id = [0, 1, 2, 3, 4, 8, 9, 12]
+             next((s for s in cs if 'Actress' in s and 'Supporting' in s), None)]
+        id = [0, 1, 2, 3, 4]
     elif name == 'ace':
         replace = [next((s for s in cs if 'Feature Film' in s and 'Drama' in s), None),
              next((s for s in cs if 'Feature Film' in s and 'Comedy' in s), None),
-             next((s for s in cs if 'Animated' in s), None),
-             next((s for s in cs if 'Documentary' in s), None)]
-        id = [0, 0, 5, 9]
+             next((s for s in cs if 'Animated' in s), None)]
+        id = [0, 0, 5]
     else:  # Oscars
         replace = [next((s for s in cs if 'Picture' in s), None),
              next((s for s in cs if 'Actor' in s and 'Leading' in s), None),
              next((s for s in cs if 'Actress' in s and 'Leading' in s), None),
              next((s for s in cs if 'Actor' in s and 'Supporting' in s), None),
              next((s for s in cs if 'Actress' in s and 'Supporting' in s), None),
-             next((s for s in cs if 'Animated' in s and 'Short' not in s), None),
-             next((s for s in cs if 'Cinematography' in s), None),
-             next((s for s in cs if 'Costume Design' in s), None),
-             next((s for s in cs if 'Direct' in s), None),
-             next((s for s in cs if 'Documentary' in s), None),
-             next((s for s in cs if 'Documentary' in s and 'Short' in s), None),
-             next((s for s in cs if 'Film Editing' in s), None),
-             next((s for s in cs if 'Foreign' in s), None),
-             next((s for s in cs if 'Makeup' in s or 'Hair' in s), None),
-             next((s for s in cs if 'Original Score' in s), None),
-             next((s for s in cs if 'Original Song' in s), None),
-             next((s for s in cs if 'Production Design' in s), None),
-             next((s for s in cs if 'Short' in s and 'Animat' in s), None),
-             next((s for s in cs if 'Short' in s and 'Live' in s), None),
-             next((s for s in cs if 'Sound' in s and 'Editing' in s), None),
-             next((s for s in cs if 'Sound' in s and 'Mixing' in s), None),
-             next((s for s in cs if 'Visual Effects' in s), None),
-             next((s for s in cs if 'Screenplay' in s and 'Adapted' in s), None),
-             next((s for s in cs if 'Screenplay' in s and 'Original' in s), None)]
-        id = list(range(0, 24))
+             next((s for s in cs if 'Animated' in s and 'Short' not in s), None)]
+        id = list(range(0, 6))
 
-    none_index = [i for i in replace if i is None]
-    cs = [c for c in cs if c not in none_index]
-    aw = [a for a in aw if a not in none_index]
 
-    for i, c in enumerate(cs):
-        cs[i] = str(id[i])
-    return cs, aw
+    noneIndices = [i for i, r in enumerate(replace) if r is None]
+    replace = [i for i in replace if i is not None]
+    id = [i for h, i in enumerate(id) if h not in noneIndices]
+
+    temp = []
+    for i, r in enumerate(replace):
+        temp.append(aw[cs.index(r)])
+
+    return id, temp
