@@ -5,13 +5,18 @@ import os
 import pickle
 
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
+from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import accuracy_score
+from keras import backend as K
+import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Dropout
+from keras.optimizers import Adam
 np.random.seed(1)
 
 
@@ -47,7 +52,7 @@ def extract_movie_data():
 
 		imdb = pd.DataFrame(tags, columns=['year', 'movie', 'movie_id', 'certificate', 'duration', 'genre', 'rate',
 										   'metascore', 'synopsis', 'votes', 'gross', 'user_reviews', 'critic_reviews',
-										   'popularity', 'awards_wins', 'awards_nominations'], index=False)
+										   'popularity', 'awards_wins', 'awards_nominations'])
 		imdb.to_csv('./data/imdb.csv')
 
 	return imdb
@@ -55,11 +60,11 @@ def extract_movie_data():
 
 def combine_datasets():
 	"""
-	Combines the BIGML dataset and our IMDB-scraped dataset. Also fills the NaN values in the gross and popularity
-	columns with -1 for better model training and sorts the data based on year and movie.
+	Combines the BIGML dataset and our IMDB-scraped dataset
 	:return: combined dataset
 	"""
-	bigml = pd.read_csv('./data/bigml.csv', index_col=0)
+	bigml = pd.read_csv('./data/bigml.csv')
+	bigml = bigml.drop(list(bigml.columns[bigml.columns.get_loc('Oscar_Best_Picture_won'):])+['release_date'], axis=1)
 	imdb = extract_movie_data()
 	dataframe = bigml.append(imdb, sort=False, ignore_index=True)
 	dataframe.sort_values(['year', 'movie'], axis=0, ascending=True, inplace=True)
@@ -105,6 +110,15 @@ def add_award_points(dataframe):
 		with open('./data/oscarAwards', 'wb') as f:
 			pickle.dump(oscarAwards, f)
 
+	categoryNames = ['best_picture', 'actor', 'actress', 'supporting_actor', 'supporting_actress', 'animated',
+					 'cinematography', 'costume_design', 'directing', 'documentary', 'documentary_short', 'film_editing',
+					 'foreign_language', 'makeup', 'original_score', 'original_song', 'production_design', 'short_animated',
+					 'short_live', 'sound_editing', 'sound_mixing', 'visual_effects', 'writing_adapted', 'writing_original']
+	for category in categoryNames:
+		dataframe[category] = np.nan
+	for category in categoryNames:
+		dataframe['oscar_' + category] = np.nan
+
 	# Adds points to all of the movies that have won/been nominated for awards in all categories (except Oscar)
 	start = dataframe.columns.get_loc('best_picture')
 
@@ -148,38 +162,38 @@ def add_award_points(dataframe):
 	return dataframe
 
 
+def focal_loss(y_true, y_pred):
+	gamma = 2.0
+	alpha = 0.25
+	pt_1 = tf.where(tf.equal(y_true, 1), y_pred, tf.ones_like(y_pred))
+	pt_0 = tf.where(tf.equal(y_true, 0), y_pred, tf.zeros_like(y_pred))
+	return -K.sum(alpha * K.pow(1. - pt_1, gamma) * K.log(pt_1))-K.sum((1-alpha) * K.pow( pt_0, gamma) * K.log(1. - pt_0))
+
+
 def main():
 	# df = combine_datasets()
 	df = pd.read_csv('./data/combined.csv', index_col=0)
 	# df.fillna(-1, inplace=True)
 	# df = add_award_points(df)
-	# df = id_genre(df)
-	# df = id_certificate(df)
 
-	df = df.drop(['movie', 'movie_id', 'synopsis'], axis=1)
+	# Data preprocessing/encoding
+	df = df.drop(['movie', 'movie_id', 'synopsis', 'genre'], axis=1)
+	df = df.drop(df[~df['certificate'].isin(['G', 'PG', 'PG-13', 'R', 'Not Rated'])].index)
+	df['popularity'] = 1/np.array(df['popularity']) * 100
+	# df['genre'] = [i.replace('|', ', ').split()[0].replace(',', '') for i in list(df.genre)]
+	df = pd.get_dummies(df, columns=['certificate'])
+	cols = df.columns.tolist()
+	cols = cols[df.columns.get_loc('oscar_writing_original') + 1:] + cols[:df.columns.get_loc('oscar_writing_original') + 1]
+	df = df[cols]
+
+	# Splits data into training and testing sets
 	oscarStart = df.columns.get_loc('oscar_best_picture')
 	modelType = 'neuralnetwork'
-
-	# Data preprocessing
 	x = df.iloc[:, :oscarStart].values
 	y = df.iloc[:, oscarStart:].values
 	y[y == 1] = 2
 	y[(y > 0) & (y < 1)] = 1
 	y = y.astype(int)
-
-	# Label encoding
-	df = df.drop(df[~df['certificate'].isin(['G', 'PG', 'PG-13', 'R', 'Not Rated'])].index)
-	labelencoder_certificate = LabelEncoder()
-	x[:, df.columns.get_loc('certificate')] = labelencoder_certificate.fit_transform(x[:, df.columns.get_loc('certificate')])
-	labelencoder_genre = LabelEncoder()
-	x[:, df.columns.get_loc('genre')] = labelencoder_genre.fit_transform(x[:, df.columns.get_loc('genre')])
-
-	# Dummy variables
-	onehotencoder = OneHotEncoder(categorical_features=[1])
-	x = onehotencoder.fit_transform(x).toarray()
-	x = x[:, 1:]
-
-	# Splits data into training and testing sets
 	xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size=0.2, random_state=21)
 
 	# Scales inputs to avoid one variable having more weight than another
@@ -188,34 +202,12 @@ def main():
 	xTest = sc.transform(xTest)
 
 	if modelType == 'svm':
-		# Because SVM cannot handle multiple outputs, split into 24 SVM models for each category
-		for category in df.columns[oscarStart:]:
-			print(category)
-			y = np.array(df[category])
-			y[y == 1] = 2
-			y[(y > 0) & (y < 1)] = 1
-			y = y.astype(int)
-			xTrain, xTest, yTrain, yTest = train_test_split(x, y, test_size=0.2, random_state=21)
+		y = df.iloc[:, oscarStart:].values
+		y[y > 0] = 1
+		y = y.astype(int)
 
-			model = svm.SVC(decision_function_shape='ovo')
-			model.fit(xTrain, yTrain)
-
-	elif modelType == 'decisiontree':
-		model = DecisionTreeClassifier(random_state=21)
+		model = svm.LinearSVC(multi_class='crammer_singer')
 		model.fit(xTrain, yTrain)
-		yPred = model.predict(xTest)
-		p = np.where(yPred == 2)
-		v = np.where(yTest == 2)
-
-		# x = np.array(df[df.columns[:oscarStart]].values)
-		# y = np.array(df[df.columns[oscarStart:]])
-		# y[y == 1] = 2
-		# y[(y > 0) & (y < 1)] = 1
-		# y = y.astype(int)
-		# xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
-		# model = DecisionTreeClassifier(random_state=21)
-		# model.fit(xTrain, yTrain)
-		# model.score(xVal, yVal)
 
 	elif modelType == 'randomforest':
 		model = RandomForestClassifier(random_state=21)
@@ -224,26 +216,18 @@ def main():
 		p = np.where(yPred==2)
 		v = np.where(yTest==2)
 
-		# x = np.array(df[df.columns[:oscarStart]].values)
-		# y = np.array(df[df.columns[oscarStart:]])
-		# y[y == 1] = 2
-		# y[(y > 0) & (y < 1)] = 1
-		# y = y.astype(int)
-		# xTrain, xVal, yTrain, yVal = train_test_split(x, y, test_size=0.2, random_state=21)
-		# model = DecisionTreeClassifier(random_state=21)
-		# model.fit(xTrain, yTrain)
-		# model.score(xVal, yVal)
-
 	elif modelType == 'neuralnetwork':
 		model = Sequential()
-		model.add(Dense(128, input_dim=39))
+		model.add(Dense(128, input_dim=xTrain.shape[1]))
 		model.add(Activation('relu'))
 		model.add(Dropout(0.2))
 		model.add(Dense(24))
 		model.add(Activation('sigmoid'))
-		model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+		model.compile(optimizer=Adam(lr=0.0001), loss=[focal_loss], metrics=['mse'])
 		model.summary()
-		model.fit(xTrain, yTrain, epochs=10, batch_size=32)
+		model.fit(xTrain, yTrain, epochs=128, batch_size=16)
+
+		model.predict(xTest)
 
 
 if __name__ == '__main__':
