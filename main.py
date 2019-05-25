@@ -3,7 +3,7 @@ import numpy as np
 import collect_data
 import os
 import pickle
-
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
@@ -168,6 +168,23 @@ def focal_loss(y_true, y_pred):
 	return -K.sum(alpha * K.pow(1. - pt_1, gamma) * K.log(pt_1))-K.sum((1-alpha) * K.pow( pt_0, gamma) * K.log(1. - pt_0))
 
 
+def compute_model_accuracies(printout, m, trainX, trainY):
+	yPred = m.predict_classes(trainX)
+	print(printout + ' Total accuracy: ' + str(accuracy_score(np.argmax(trainY, axis=-1), yPred)))
+	winnersIdx = [i for i, h in enumerate(np.argmax(trainY, axis=-1)) if h == 0]
+	winnersTrain = [np.argmax(trainY, axis=-1)[i] for i in winnersIdx]
+	winnersPred = [yPred[i] for i in winnersIdx]
+	print('   ' + printout + ' Accuracy for predicting winners: ' + str(accuracy_score(winnersTrain, winnersPred)))
+	nomineesIdx = [i for i, h in enumerate(np.argmax(trainY, axis=-1)) if h == 1]
+	nomineesTrain = [np.argmax(trainY, axis=-1)[i] for i in nomineesIdx]
+	nomineesPred = [yPred[i] for i in nomineesIdx]
+	print('   ' + printout + ' Accuracy for predicting nominees: ' + str(accuracy_score(nomineesTrain, nomineesPred)))
+	losersIdx = [i for i, h in enumerate(np.argmax(trainY, axis=-1)) if h == 2]
+	losersTrain = [np.argmax(trainY, axis=-1)[i] for i in losersIdx]
+	losersPred = [yPred[i] for i in losersIdx]
+	print('   ' + printout + ' Accuracy for predicting losers: ' + str(accuracy_score(losersTrain, losersPred)))
+
+
 def main():
 	# df = combine_datasets()
 	df = pd.read_csv('./data/combined.csv', index_col=0)
@@ -176,57 +193,89 @@ def main():
 
 	# Data preprocessing/encoding
 	df = df.drop(['movie', 'movie_id', 'synopsis', 'genre'], axis=1)
-	df = df.drop(df[~df['certificate'].isin(['G', 'PG', 'PG-13', 'R', 'Not Rated'])].index)
+	# df = df.drop(df[~df['certificate'].isin(['G', 'PG', 'PG-13', 'R', 'Not Rated'])].index)
 	df['popularity'] = 1/np.array(df['popularity']) * 100
 	# df['genre'] = [i.replace('|', ', ').split()[0].replace(',', '') for i in list(df.genre)]
 	df = pd.get_dummies(df, columns=['certificate'])
 	cols = df.columns.tolist()
-	cols = cols[df.columns.get_loc('oscar_writing_original') + 1:] + cols[:df.columns.get_loc('oscar_writing_original') + 1]
+	cols = cols[df.columns.get_loc('oscar_animated') + 1:] + cols[:df.columns.get_loc('oscar_animated') + 1]
 	df = df[cols]
+	df = df.reset_index(drop=True)
+	splitIndex = df.index[df['year'] == 2018][0]
+	df = df.drop(['year'], axis=1)
 
 	# Splits data into training and testing sets
 	oscarStart = df.columns.get_loc('oscar_best_picture')
 	modelType = 'neuralnetwork'
 	x = df.iloc[:, :oscarStart].values
 	y = df.iloc[:, oscarStart:].values
-	y[y == 1] = 2
-	y[(y > 0) & (y < 1)] = 1
-	y = y.astype(int)
-	xTrain, xTest = x[:df.index[df['year'] == 2018]], x[df.index[df['year'] == 2018]:]
-	yTrain, yTest = y[:df.index[df['year'] == 2018]], y[df.index[df['year'] == 2018]:]
+	y[(y > 0) & (y < 1)] = 0.5  # winner is 1, nominee is 0.5
+	xTrain, xTest = x[:splitIndex], x[splitIndex:]
+	yTrain, yTest = y[:splitIndex], y[splitIndex:]
+
+	# Checks how imbalanced the data is
+	unique, counts = np.unique(y, return_counts=True)
+	print(dict(zip(unique, counts)))
+	print('Null accuracy (if dumb model predicts most frequent class everytime): ' + str(counts[0]/counts.sum()))
 
 	# Scales inputs to avoid one variable having more weight than another
 	sc = StandardScaler()
 	xTrain = sc.fit_transform(xTrain)
 	xTest = sc.transform(xTest)
 
-	# if modelType == 'svm':
-	# 	y = df.iloc[:, oscarStart:].values
-	# 	y[y > 0] = 1
-	# 	y = y.astype(int)
-	#
-	# 	model = svm.LinearSVC(multi_class='crammer_singer')
-	# 	model.fit(xTrain, yTrain)
-	#
-	# elif modelType == 'randomforest':
-	# 	model = RandomForestClassifier(random_state=21)
-	# 	model.fit(xTrain, yTrain)
-	# 	yPred = model.predict(xTest)
-	# 	p = np.where(yPred==2)
-	# 	v = np.where(yTest==2)
-	#
-	# elif modelType == 'neuralnetwork':
-	# 	model = Sequential()
-	# 	model.add(Dense(128, input_dim=xTrain.shape[1]))
-	# 	model.add(Activation('relu'))
-	# 	model.add(Dropout(0.2))
-	# 	model.add(Dense(24))
-	# 	model.add(Activation('sigmoid'))
-	# 	model.compile(optimizer=Adam(lr=0.0001), loss=[focal_loss], metrics=['mse'])
-	# 	model.summary()
-	# 	model.fit(xTrain, yTrain, epochs=128, batch_size=16)
-	#
-	# 	model.predict(xTest)
+	if modelType == 'randomforest':
+		model = RandomForestClassifier(random_state=21)
+		model.fit(xTrain, yTrain)
+		yPred = model.predict(xTest)
+		p = np.where(yPred==2)
+		v = np.where(yTest==2)
+
+	elif modelType == 'neuralnetwork':
+		model = Sequential()
+		model.add(Dense(128, input_dim=xTrain.shape[1]))
+		model.add(Activation('relu'))
+		model.add(Dropout(0.2))
+		model.add(Dense(3))
+		model.add(Activation('softmax'))
+		model.compile(optimizer=Adam(lr=0.0001), loss=[focal_loss], metrics=['mse'])
+		model.summary()
+
+		# One hot encoding for softmax activation function
+		temp = []
+		for i in yTrain:
+			if 1 in i:
+				temp.append([1, 0, 0])
+			elif 0.5 in i:
+				temp.append([0, 1, 0])
+			else:
+				temp.append([0, 0, 1])
+		yTrain = np.array(temp)
+		temp = []
+		for i in yTest:
+			if 1 in i:
+				temp.append([1, 0, 0])
+			elif 0.5 in i:
+				temp.append([0, 1, 0])
+			else:
+				temp.append([0, 0, 1])
+		yTest = np.array(temp)
+
+		# Fitting the model
+		classWeight = {0: 0.6, 1: 0.3, 2: 0.1}
+		model.fit(xTrain, yTrain, epochs=512, batch_size=32, class_weight=classWeight)
+
+		# Training accuracy (put training data back in)
+		compute_model_accuracies('(TRAINING)', model, xTrain, yTrain)
+
+		# Testing accuracy
+		compute_model_accuracies('(TESTING)', model, xTest, yTest)
+
+		# Print the names of the predicted nominees
+		df = pd.read_csv('./data/combined.csv', index_col=0)
+		df = df.reset_index(drop=True)
+		for i, pred in enumerate(yPred):
+			if pred == 1:
+				print(df.iloc[splitIndex + i].movie)
 
 
 if __name__ == '__main__':
