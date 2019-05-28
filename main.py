@@ -334,7 +334,7 @@ def main():
 			output6 = Dense(3, activation='softmax')(dropout)
 			model = Model(inputs=input, outputs=[output1, output2, output3, output4, output5, output6])
 			model.compile(optimizer=Adam(lr=0.01), loss=['categorical_crossentropy']*6, metrics=['mse'])
-			model.fit(xTrain, yTrain, epochs=512, batch_size=32)
+			model.fit(xTrain, yTrain, epochs=512, batch_size=32, class_weight={0: counts.sum()/counts[2], 1: counts.sum()/counts[1], 2: counts.sum()/counts[0]})
 
 		# Training accuracy (put training data back in) and testing accuracy
 		compute_model_accuracies(predictCategory, '(TRAINING)', model, xTrain, yTrain)
