@@ -4,6 +4,8 @@ import collect_data
 import os
 import pickle
 import matplotlib.pyplot as plt
+
+import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
@@ -13,9 +15,8 @@ from sklearn import svm
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import accuracy_score
 from keras import backend as K
-import tensorflow as tf
-from keras.models import Sequential
-from keras.layers import Dense, Activation, Dropout
+from keras.models import Sequential, Model
+from keras.layers import Dense, Activation, Dropout, Input, BatchNormalization
 from keras.optimizers import Adam
 np.random.seed(1)
 
@@ -168,34 +169,70 @@ def focal_loss(y_true, y_pred):
 	return -K.sum(alpha * K.pow(1. - pt_1, gamma) * K.log(pt_1))-K.sum((1-alpha) * K.pow( pt_0, gamma) * K.log(1. - pt_0))
 
 
-def compute_model_accuracies(printout, m, trainX, trainY):
-	yPred = m.predict_classes(trainX)
-	print(printout + ' Total accuracy: ' + str(accuracy_score(np.argmax(trainY, axis=-1), yPred)))
-	winnersIdx = [i for i, h in enumerate(np.argmax(trainY, axis=-1)) if h == 0]
-	winnersTrain = [np.argmax(trainY, axis=-1)[i] for i in winnersIdx]
-	winnersPred = [yPred[i] for i in winnersIdx]
-	print('   ' + printout + ' Accuracy for predicting winners: ' + str(accuracy_score(winnersTrain, winnersPred)))
-	nomineesIdx = [i for i, h in enumerate(np.argmax(trainY, axis=-1)) if h == 1]
-	nomineesTrain = [np.argmax(trainY, axis=-1)[i] for i in nomineesIdx]
-	nomineesPred = [yPred[i] for i in nomineesIdx]
-	print('   ' + printout + ' Accuracy for predicting nominees: ' + str(accuracy_score(nomineesTrain, nomineesPred)))
-	losersIdx = [i for i, h in enumerate(np.argmax(trainY, axis=-1)) if h == 2]
-	losersTrain = [np.argmax(trainY, axis=-1)[i] for i in losersIdx]
-	losersPred = [yPred[i] for i in losersIdx]
-	print('   ' + printout + ' Accuracy for predicting losers: ' + str(accuracy_score(losersTrain, losersPred)))
+def compute_model_accuracies(predCategory, printout, m, x, y):
+	if not predCategory:
+		yPred = m.predict_classes(x)
+
+		totalAccuracy = accuracy_score(y, yPred)
+		winnerIdx = [i for i, h in enumerate(y) if h == 0]
+		winnerTrain = [y[i] for i in winnerIdx]
+		winnerPred = [yPred[i] for i in winnerIdx]
+		winnerAccuracy = accuracy_score(winnerTrain, winnerPred)
+		nomineeIdx = [i for i, h in enumerate(y) if h == 1]
+		nomineeTrain = [y[i] for i in nomineeIdx]
+		nomineePred = [yPred[i] for i in nomineeIdx]
+		nomineeAccuracy = accuracy_score(nomineeTrain, nomineePred)
+		loserIdx = [i for i, h in enumerate(y) if h == 2]
+		loserTrain = [y[i] for i in loserIdx]
+		loserPred = [yPred[i] for i in loserIdx]
+		loserAccuracy = accuracy_score(loserTrain, loserPred)
+	else:
+		targetPred = m.predict(x)
+
+		totalAccuracy = 0
+		winnerAccuracy = 0
+		nomineeAccuracy = 0
+		loserAccuracy = 0
+		for i in range(0, 6):
+			true = y[i].argmax(axis=-1)
+			pred = targetPred[i].argmax(axis=-1)
+
+			totalAccuracy += accuracy_score(true, pred)
+
+			winnerIdx = [a for a, h in enumerate(true) if h == 0]
+			winnerTrain = [true[a] for a in winnerIdx]
+			winnerPred = [pred[a] for a in winnerIdx]
+			winnerAccuracy += accuracy_score(winnerTrain, winnerPred)
+
+			nomineeIdx = [i for i, h in enumerate(true) if h == 1]
+			nomineeTrain = [true[a] for a in nomineeIdx]
+			nomineePred = [pred[a] for a in nomineeIdx]
+			nomineeAccuracy += accuracy_score(nomineeTrain, nomineePred)
+
+			loserIdx = [a for a, h in enumerate(true) if h == 2]
+			loserTrain = [true[a] for a in loserIdx]
+			loserPred = [pred[a] for a in loserIdx]
+			loserAccuracy += accuracy_score(loserTrain, loserPred)
+
+
+		totalAccuracy /= 6; winnerAccuracy /= 6; nomineeAccuracy /= 6; loserAccuracy /= 6
+
+	print(printout + ' Total accuracy: ' + str(totalAccuracy))
+	print('   ' + printout + ' Accuracy for predicting winners: ' + str(winnerAccuracy))
+	print('   ' + printout + ' Accuracy for predicting nominees: ' + str(nomineeAccuracy))
+	print('   ' + printout + ' Accuracy for predicting losers: ' + str(loserAccuracy))
 
 
 def main():
 	# df = combine_datasets()
 	df = pd.read_csv('./data/combined.csv', index_col=0)
 	# df.fillna(-1, inplace=True)
+	# df = df.drop(df[~df['certificate'].isin(['G', 'PG', 'PG-13', 'R', 'Not Rated'])].index)
 	# df = add_award_points(df)
 
 	# Data preprocessing/encoding
 	df = df.drop(['movie', 'movie_id', 'synopsis', 'genre'], axis=1)
-	# df = df.drop(df[~df['certificate'].isin(['G', 'PG', 'PG-13', 'R', 'Not Rated'])].index)
 	df['popularity'] = 1/np.array(df['popularity']) * 100
-	# df['genre'] = [i.replace('|', ', ').split()[0].replace(',', '') for i in list(df.genre)]
 	df = pd.get_dummies(df, columns=['certificate'])
 	cols = df.columns.tolist()
 	cols = cols[df.columns.get_loc('oscar_animated') + 1:] + cols[:df.columns.get_loc('oscar_animated') + 1]
@@ -206,23 +243,24 @@ def main():
 
 	# Splits data into training and testing sets
 	oscarStart = df.columns.get_loc('oscar_best_picture')
-	modelType = 'neuralnetwork'
 	x = df.iloc[:, :oscarStart].values
 	y = df.iloc[:, oscarStart:].values
-	y[(y > 0) & (y < 1)] = 0.5  # winner is 1, nominee is 0.5
+	y[(y > 0) & (y < 1)] = 0.5  # winner is 1, nominee is 0.5, nothing is 0
 	xTrain, xTest = x[:splitIndex], x[splitIndex:]
 	yTrain, yTest = y[:splitIndex], y[splitIndex:]
 
 	# Checks how imbalanced the data is
-	unique, counts = np.unique(y, return_counts=True)
+	unique, counts = np.unique(yTrain, return_counts=True)
 	print(dict(zip(unique, counts)))
-	print('Null accuracy (if dumb model predicts most frequent class everytime): ' + str(counts[0]/counts.sum()))
+	print('Null accuracy: ' + str(counts[0]/counts.sum()))
 
 	# Scales inputs to avoid one variable having more weight than another
 	sc = StandardScaler()
 	xTrain = sc.fit_transform(xTrain)
 	xTest = sc.transform(xTest)
 
+	modelType = 'neuralnetwork'
+	predictCategory = True
 	if modelType == 'randomforest':
 		model = RandomForestClassifier(random_state=21)
 		model.fit(xTrain, yTrain)
@@ -231,51 +269,83 @@ def main():
 		v = np.where(yTest==2)
 
 	elif modelType == 'neuralnetwork':
-		model = Sequential()
-		model.add(Dense(128, input_dim=xTrain.shape[1]))
-		model.add(Activation('relu'))
-		model.add(Dropout(0.2))
-		model.add(Dense(3))
-		model.add(Activation('softmax'))
-		model.compile(optimizer=Adam(lr=0.0001), loss=[focal_loss], metrics=['mse'])
-		model.summary()
+		if not predictCategory:
+			# One hot encoding for softmax activation function
+			trainTargets = []
+			for i in yTrain:
+				if 1 in i:
+					trainTargets.append([1, 0, 0])
+				elif 0.5 in i:
+					trainTargets.append([0, 1, 0])
+				else:
+					trainTargets.append([0, 0, 1])
+			yTrain = np.array(trainTargets)
+			testTargets = []
+			for i in yTest:
+				if 1 in i:
+					testTargets.append([1, 0, 0])
+				elif 0.5 in i:
+					testTargets.append([0, 1, 0])
+				else:
+					testTargets.append([0, 0, 1])
+			yTest = np.array(testTargets)
 
-		# One hot encoding for softmax activation function
-		temp = []
-		for i in yTrain:
-			if 1 in i:
-				temp.append([1, 0, 0])
-			elif 0.5 in i:
-				temp.append([0, 1, 0])
-			else:
-				temp.append([0, 0, 1])
-		yTrain = np.array(temp)
-		temp = []
-		for i in yTest:
-			if 1 in i:
-				temp.append([1, 0, 0])
-			elif 0.5 in i:
-				temp.append([0, 1, 0])
-			else:
-				temp.append([0, 0, 1])
-		yTest = np.array(temp)
+			model = Sequential()
+			model.add(Dense(256, input_dim=xTrain.shape[1]))
+			model.add(Activation('relu'))
+			model.add(Dropout(0.2))
+			model.add(Dense(3))
+			model.add(Activation('softmax'))
+			model.compile(optimizer=Adam(lr=0.01), loss='categorical_crossentropy', metrics=['mse'])
+			model.fit(xTrain, yTrain, epochs=512, batch_size=32, class_weight={0: counts.sum()/counts[2], 1: counts.sum()/counts[1], 2: counts.sum()/counts[0]})
+		else:
+			# One hot encoding for softmax activation function
+			trainTargets = [[] for i in range(0, 6)]
+			for i in yTrain:
+				for idx, j in enumerate(i):
+					if j == 1:  # winner
+						trainTargets[idx].append([1, 0, 0])
+					elif j == 0.5:  # nominee
+						trainTargets[idx].append([0, 1, 0])
+					else:  # loser/nothing
+						trainTargets[idx].append([0, 0, 1])
+			yTrain = [np.array(i) for i in trainTargets]
+			testTargets = [[] for i in range(0, 6)]
+			for i in yTest:
+				for idx, j in enumerate(i):
+					if j == 1:  # winner
+						testTargets[idx].append([1, 0, 0])
+					elif j == 0.5:  # nominee
+						testTargets[idx].append([0, 1, 0])
+					else:  # loser/nothing
+						testTargets[idx].append([0, 0, 1])
+			yTest = [np.array(i) for i in testTargets]
 
-		# Fitting the model
-		classWeight = {0: 0.6, 1: 0.3, 2: 0.1}
-		model.fit(xTrain, yTrain, epochs=512, batch_size=32, class_weight=classWeight)
+			input = Input(shape=(xTrain.shape[1],))
+			hidden = Dense(128)(input)
+			activation = Activation('relu')(hidden)
+			normalization = BatchNormalization()(activation)
+			dropout = Dropout(0.2)(normalization)
+			output1 = Dense(3, activation='softmax')(dropout)
+			output2 = Dense(3, activation='softmax')(dropout)
+			output3 = Dense(3, activation='softmax')(dropout)
+			output4 = Dense(3, activation='softmax')(dropout)
+			output5 = Dense(3, activation='softmax')(dropout)
+			output6 = Dense(3, activation='softmax')(dropout)
+			model = Model(inputs=input, outputs=[output1, output2, output3, output4, output5, output6])
+			model.compile(optimizer=Adam(lr=0.01), loss=['categorical_crossentropy']*6, metrics=['mse'])
+			model.fit(xTrain, yTrain, epochs=512, batch_size=32)
 
-		# Training accuracy (put training data back in)
-		compute_model_accuracies('(TRAINING)', model, xTrain, yTrain)
+		# Training accuracy (put training data back in) and testing accuracy
+		compute_model_accuracies(predictCategory, '(TRAINING)', model, xTrain, yTrain)
+		compute_model_accuracies(predictCategory, '(TESTING)', model, xTest, yTest)
 
-		# Testing accuracy
-		compute_model_accuracies('(TESTING)', model, xTest, yTest)
-
-		# Print the names of the predicted nominees
-		df = pd.read_csv('./data/combined.csv', index_col=0)
-		df = df.reset_index(drop=True)
-		for i, pred in enumerate(yPred):
-			if pred == 1:
-				print(df.iloc[splitIndex + i].movie)
+		# # Print the names of the predicted nominees
+		# df = pd.read_csv('./data/combined.csv', index_col=0)
+		# df = df.reset_index(drop=True)
+		# for i, pred in enumerate(yPred):
+		# 	if pred == 1:
+		# 		print(df.iloc[splitIndex + i].movie)
 
 
 if __name__ == '__main__':
