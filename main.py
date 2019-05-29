@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
+np.random.seed(1)
 import collect_data as cd
 import os
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 import pickle
-import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.model_selection import train_test_split
@@ -12,7 +13,6 @@ from sklearn.metrics import accuracy_score
 from keras.models import Sequential, Model, load_model
 from keras.layers import Dense, Activation, Dropout, Input, BatchNormalization
 from keras.optimizers import Adam
-np.random.seed(1)
 
 
 def extract_movie_data():
@@ -348,23 +348,25 @@ def main():
 						testTargets[idx].append([0, 0, 1])
 			yTest = [np.array(i) for i in testTargets]
 
-			input = Input(shape=(xTrain.shape[1],))
-			x = Dense(128, activation='relu')(input)
-			x = BatchNormalization()(x)
-			x = Dropout(0.2)(x)
-			output1 = Dense(3, activation='softmax')(x)
-			output2 = Dense(3, activation='softmax')(x)
-			output3 = Dense(3, activation='softmax')(x)
-			output4 = Dense(3, activation='softmax')(x)
-			output5 = Dense(3, activation='softmax')(x)
-			output6 = Dense(3, activation='softmax')(x)
-			model = Model(inputs=input, outputs=[output1, output2, output3, output4, output5, output6])
-			model.compile(optimizer=Adam(lr=0.01), loss='categorical_crossentropy')
+			if os.path.exists('best.h5'):
+				model = load_model('best.h5')
+			else:
+				input = Input(shape=(xTrain.shape[1],))
+				x = Dense(128, activation='relu')(input)
+				x = BatchNormalization()(x)
+				x = Dropout(0.2)(x)
+				output1 = Dense(3, activation='softmax')(x)
+				output2 = Dense(3, activation='softmax')(x)
+				output3 = Dense(3, activation='softmax')(x)
+				output4 = Dense(3, activation='softmax')(x)
+				output5 = Dense(3, activation='softmax')(x)
+				output6 = Dense(3, activation='softmax')(x)
+				model = Model(inputs=input, outputs=[output1, output2, output3, output4, output5, output6])
+				model.compile(optimizer=Adam(lr=0.01), loss='categorical_crossentropy')
 
-			classWeights = {0: counts.sum()/counts[2], 1: counts.sum()/counts[1], 2: counts.sum()/counts[0]}
-			model.fit(xTrain, yTrain, epochs=512, batch_size=32, class_weight=classWeights)
-			# model.save('best.h5')
-			# model = load_model('best.h5')
+				classWeights = {0: counts.sum()/counts[2], 1: counts.sum()/counts[1], 2: counts.sum()/counts[0]}
+				model.fit(xTrain, yTrain, epochs=512, batch_size=32, class_weight=classWeights)
+				# model.save('best.h5')
 
 		# Training accuracy (put training data back in) and testing accuracy
 		compute_model_accuracies(predictCategory, '(TRAINING)', model, xTrain, yTrain, splitIndex)
