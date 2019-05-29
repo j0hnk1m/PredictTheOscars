@@ -1,11 +1,11 @@
 import pandas as pd
 import numpy as np
-import collect_data
+import collect_data as cd
+import loss_functions as lf
 import os
 import pickle
 import matplotlib.pyplot as plt
 
-import tensorflow as tf
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
@@ -14,8 +14,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn import svm
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import accuracy_score
-from keras import backend as K
-from keras.models import Sequential, Model
+from keras.models import Sequential, Model, load_model
 from keras.layers import Dense, Activation, Dropout, Input, BatchNormalization
 from keras.optimizers import Adam
 np.random.seed(1)
@@ -30,9 +29,9 @@ def extract_movie_data():
 	if os.path.exists('./data/imdb.csv'):
 		imdb = pd.read_csv('./data/imdb.csv', index_col=0)
 	else:
-		imdb = collect_data.imdb_feature_film(2000)
+		imdb = cd.imdb_feature_film(2000)
 		for y in list(range(2001, 2019)):
-			imdb = imdb.append(collect_data.imdb_feature_film(y))
+			imdb = imdb.append(cd.imdb_feature_film(y))
 
 		# Removes duplicate movies
 		df = pd.read_csv('./data/bigml.csv')
@@ -46,7 +45,7 @@ def extract_movie_data():
 		for index, row in imdb.iterrows():
 			print(str(index) + '. ' + row['movie'])
 			id = row['movie_id']
-			extra = collect_data.movie_tags(id)
+			extra = cd.movie_tags(id)
 
 			if extra is not None:
 				tags.append([row['year'], row['movie'], row['movie_id']] + extra)
@@ -98,7 +97,7 @@ def add_award_points(dataframe):
 		oscarAwards = []
 		for y in range(2000, 2019):
 			print(y)
-			results = collect_data.scrape_movie_awards(y)
+			results = cd.scrape_movie_awards(y)
 			categories.append(results[0])
 			awards.append(results[1])
 			oscarCategories.append(results[2])
@@ -161,33 +160,44 @@ def add_award_points(dataframe):
 	return dataframe
 
 
-def focal_loss(y_true, y_pred):
-	gamma = 2.0
-	alpha = 0.25
-	pt_1 = tf.where(tf.equal(y_true, 1), y_pred, tf.ones_like(y_pred))
-	pt_0 = tf.where(tf.equal(y_true, 0), y_pred, tf.zeros_like(y_pred))
-	return -K.sum(alpha * K.pow(1. - pt_1, gamma) * K.log(pt_1))-K.sum((1-alpha) * K.pow( pt_0, gamma) * K.log(1. - pt_0))
+def compute_model_accuracies(predCategory, printout, m, x, y, split):
+	categoryNames = ['best_picture', 'best_actor', 'best_actress', 'best_supporting_actor', 'best_supporting_actress', 'best_animated']
+	df = pd.read_csv('./data/combined.csv', index_col=0)
+	df = df.reset_index(drop=True)
 
-
-def compute_model_accuracies(predCategory, printout, m, x, y):
 	if not predCategory:
 		yPred = m.predict_classes(x)
 
 		totalAccuracy = accuracy_score(y, yPred)
+
 		winnerIdx = [i for i, h in enumerate(y) if h == 0]
 		winnerTrain = [y[i] for i in winnerIdx]
 		winnerPred = [yPred[i] for i in winnerIdx]
 		winnerAccuracy = accuracy_score(winnerTrain, winnerPred)
+
 		nomineeIdx = [i for i, h in enumerate(y) if h == 1]
 		nomineeTrain = [y[i] for i in nomineeIdx]
 		nomineePred = [yPred[i] for i in nomineeIdx]
 		nomineeAccuracy = accuracy_score(nomineeTrain, nomineePred)
+
 		loserIdx = [i for i, h in enumerate(y) if h == 2]
 		loserTrain = [y[i] for i in loserIdx]
 		loserPred = [yPred[i] for i in loserIdx]
 		loserAccuracy = accuracy_score(loserTrain, loserPred)
+
+		print(printout + ' Total accuracy: ' + str(totalAccuracy))
+		print('   ' + printout + ' Accuracy for predicting winners: ' + str(winnerAccuracy))
+		print('   ' + printout + ' Accuracy for predicting nominees: ' + str(nomineeAccuracy))
+		print('   ' + printout + ' Accuracy for predicting losers: ' + str(loserAccuracy))
+
+		# Print the names of the predicted winners/nominees
+		if printout == '(TESTING)':
+			yPred = m.predict(x)
+			for i, pred in enumerate(yPred):
+				if pred == 2 or pred == 1:
+					print(df.iloc[split + i].movie)
 	else:
-		targetPred = m.predict(x)
+		yPred = m.predict(x)
 
 		totalAccuracy = 0
 		winnerAccuracy = 0
@@ -195,7 +205,7 @@ def compute_model_accuracies(predCategory, printout, m, x, y):
 		loserAccuracy = 0
 		for i in range(0, 6):
 			true = y[i].argmax(axis=-1)
-			pred = targetPred[i].argmax(axis=-1)
+			pred = yPred[i].argmax(axis=-1)
 
 			totalAccuracy += accuracy_score(true, pred)
 
@@ -214,13 +224,34 @@ def compute_model_accuracies(predCategory, printout, m, x, y):
 			loserPred = [pred[a] for a in loserIdx]
 			loserAccuracy += accuracy_score(loserTrain, loserPred)
 
-
 		totalAccuracy /= 6; winnerAccuracy /= 6; nomineeAccuracy /= 6; loserAccuracy /= 6
+		print(printout + ' Total accuracy: ' + str(totalAccuracy))
+		print('   ' + printout + ' Accuracy for predicting winners: ' + str(winnerAccuracy))
+		print('   ' + printout + ' Accuracy for predicting nominees: ' + str(nomineeAccuracy))
+		print('   ' + printout + ' Accuracy for predicting losers: ' + str(loserAccuracy))
+		print()
 
-	print(printout + ' Total accuracy: ' + str(totalAccuracy))
-	print('   ' + printout + ' Accuracy for predicting winners: ' + str(winnerAccuracy))
-	print('   ' + printout + ' Accuracy for predicting nominees: ' + str(nomineeAccuracy))
-	print('   ' + printout + ' Accuracy for predicting losers: ' + str(loserAccuracy))
+		# Print the names of the predicted winners/nominees
+		if printout == '(TESTING)':
+			yPred = [i.argmax(axis=-1) for i in yPred]
+			temp = []
+			for s in range(yPred[0].shape[0]):
+				sample = []
+				[sample.append(i[s]) for i in yPred]
+				temp.append(sample)
+			yPred = np.array(temp)
+
+			for i, pred in enumerate(yPred):
+				movie = df.iloc[split + i].movie
+				winnerCategories = [categoryNames[a] for a, b in enumerate(pred) if b == 0]
+				nomineeCategories = [categoryNames[a] for a, b in enumerate(pred) if b == 1]
+
+				if winnerCategories and nomineeCategories:
+					print(movie + ': Won ' + '|'.join(winnerCategories) + ', Nominated for ' + '|'.join(nomineeCategories))
+				elif winnerCategories and not nomineeCategories:
+					print(movie + ': Won ' + '|'.join(winnerCategories))
+				elif not winnerCategories and nomineeCategories:
+					print(movie + ': Nominated for ' + '|'.join(nomineeCategories))
 
 
 def main():
@@ -252,7 +283,6 @@ def main():
 	# Checks how imbalanced the data is
 	unique, counts = np.unique(yTrain, return_counts=True)
 	print(dict(zip(unique, counts)))
-	print('Null accuracy: ' + str(counts[0]/counts.sum()))
 
 	# Scales inputs to avoid one variable having more weight than another
 	sc = StandardScaler()
@@ -297,7 +327,9 @@ def main():
 			model.add(Dense(3))
 			model.add(Activation('softmax'))
 			model.compile(optimizer=Adam(lr=0.01), loss='categorical_crossentropy', metrics=['mse'])
-			model.fit(xTrain, yTrain, epochs=512, batch_size=32, class_weight={0: counts.sum()/counts[2], 1: counts.sum()/counts[1], 2: counts.sum()/counts[0]})
+
+			classWeights = {0: counts.sum()/counts[2], 1: counts.sum()/counts[1], 2: counts.sum()/counts[0]}
+			model.fit(xTrain, yTrain, epochs=512, batch_size=32, class_weight=classWeights)
 		else:
 			# One hot encoding for softmax activation function
 			trainTargets = [[] for i in range(0, 6)]
@@ -322,30 +354,26 @@ def main():
 			yTest = [np.array(i) for i in testTargets]
 
 			input = Input(shape=(xTrain.shape[1],))
-			hidden = Dense(128)(input)
-			activation = Activation('relu')(hidden)
-			normalization = BatchNormalization()(activation)
-			dropout = Dropout(0.2)(normalization)
-			output1 = Dense(3, activation='softmax')(dropout)
-			output2 = Dense(3, activation='softmax')(dropout)
-			output3 = Dense(3, activation='softmax')(dropout)
-			output4 = Dense(3, activation='softmax')(dropout)
-			output5 = Dense(3, activation='softmax')(dropout)
-			output6 = Dense(3, activation='softmax')(dropout)
+			x = Dense(128, activation='relu')(input)
+			x = BatchNormalization()(x)
+			x = Dropout(0.2)(x)
+			output1 = Dense(3, activation='softmax')(x)
+			output2 = Dense(3, activation='softmax')(x)
+			output3 = Dense(3, activation='softmax')(x)
+			output4 = Dense(3, activation='softmax')(x)
+			output5 = Dense(3, activation='softmax')(x)
+			output6 = Dense(3, activation='softmax')(x)
 			model = Model(inputs=input, outputs=[output1, output2, output3, output4, output5, output6])
-			model.compile(optimizer=Adam(lr=0.01), loss=['categorical_crossentropy']*6, metrics=['mse'])
-			model.fit(xTrain, yTrain, epochs=512, batch_size=32, class_weight={0: counts.sum()/counts[2], 1: counts.sum()/counts[1], 2: counts.sum()/counts[0]})
+			model.compile(optimizer=Adam(lr=0.01), loss='categorical_crossentropy')
+
+			classWeights = {0: counts.sum()/counts[2], 1: counts.sum()/counts[1], 2: counts.sum()/counts[0]}
+			model.fit(xTrain, yTrain, epochs=512, batch_size=32, class_weight=classWeights)
+			# model.save('best.h5')
+			# model = load_model('best.h5')
 
 		# Training accuracy (put training data back in) and testing accuracy
-		compute_model_accuracies(predictCategory, '(TRAINING)', model, xTrain, yTrain)
-		compute_model_accuracies(predictCategory, '(TESTING)', model, xTest, yTest)
-
-		# # Print the names of the predicted nominees
-		# df = pd.read_csv('./data/combined.csv', index_col=0)
-		# df = df.reset_index(drop=True)
-		# for i, pred in enumerate(yPred):
-		# 	if pred == 1:
-		# 		print(df.iloc[splitIndex + i].movie)
+		compute_model_accuracies(predictCategory, '(TRAINING)', model, xTrain, yTrain, splitIndex)
+		compute_model_accuracies(predictCategory, '(TESTING)', model, xTest, yTest, splitIndex)
 
 
 if __name__ == '__main__':
