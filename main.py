@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import collect_data as cd
-import loss_functions as lf
 import os
 import pickle
 import matplotlib.pyplot as plt
