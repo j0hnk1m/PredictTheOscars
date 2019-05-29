@@ -6,12 +6,8 @@ import pickle
 import matplotlib.pyplot as plt
 
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
-from sklearn.compose import ColumnTransformer
 from sklearn.model_selection import train_test_split
-from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn import svm
-from sklearn.multiclass import OneVsRestClassifier
 from sklearn.metrics import accuracy_score
 from keras.models import Sequential, Model, load_model
 from keras.layers import Dense, Activation, Dropout, Input, BatchNormalization
