@@ -1,4 +1,4 @@
-#Project PTO - Building a Computer Algorithm to Predict the Oscars
+# Project PTO - Building a Computer Algorithm to Predict the Oscars
 A computer algorithm using machine learning and data science to determine which movies will be oscar nominees, and which of those nominees will be winners
 
 The project consists of 4 major steps: 
