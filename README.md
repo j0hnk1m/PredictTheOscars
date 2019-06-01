@@ -17,5 +17,22 @@ The project consists of 4 major sections:
 3. The Algorithm
 4. Algorithm Optimization
 
+## File Descriptions
+data/ - contains datasets that were created and used, as well as pickled numpy arrays
+imgs/ - images used in the jupyter noteboook
+best.h5 - best performing saved model in h5 format
+collect_data.py - contains functions that main.py uses to collect/web-scrape movie data
+main.py - the main file of this project. 
+predicting_the_oscars.html - HTML version of the jupyter notebook
+predicting_the_oscars.ipynb - jupyter notebook
+
+## Usage
+The project was programmed with Anaconda Python 3.6 along with the sklearn and keras packages.
+
+To use, simply clone this repo in any directory and run:
+```
+python3 main.py
+```
+
 ## License
 Code is released under the MIT License.
