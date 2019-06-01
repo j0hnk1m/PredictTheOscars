@@ -1,5 +1,4 @@
-![](./imgs/oscars.jpg)
-<img src=./imgs/oscars.jpg width="48">
+<img src=./imgs/oscars.jpg width="400">
 # Project PTO - Building a Computer Algorithm to Predict the Oscars
 This project was a month-long side project I did for my highschool final project. PTO is a computer algorithm using machine learning and data science to determine which movies will be oscar nominees and winners.
 
